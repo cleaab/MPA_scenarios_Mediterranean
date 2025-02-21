@@ -1,0 +1,498 @@
+---
+title: "Fishing-the-line-final"
+author: "Clea Abello"
+date: '2023-06-19'
+output: html_document
+---
+
+```{r}
+rm(list=ls())
+library(tidyverse)
+library(terra)
+library(here)
+library(ggplot2)
+```
+
+
+# Algorithm to calcule MPA clusters
+```{r}
+# Calculate MPA clusters -----------------------------------------------------------
+
+MPA_cluster <- function(MPA){
+  MPA_array = as.matrix(MPA)
+  nrow = nx
+  ncol = ny
+  
+  big_cluster_list =list()
+  for (i in 1:nrow){
+  
+    for (j in 1:ncol){
+      if (MPA_array[i,j] == 1){
+        adjacent_indices_row = c()
+        adjacent_indices_col = c()
+        # Look at neighbors - find indices according to grid level
+        if (i > 1) {
+          adjacent_indices_row = c(adjacent_indices_row, i-1)
+          adjacent_indices_col = c(adjacent_indices_col, j)
+        }
+        if (i < nrow){
+          adjacent_indices_row = c(adjacent_indices_row, i+1)
+          adjacent_indices_col = c(adjacent_indices_col, j)
+        }
+        if (j > 1){
+          adjacent_indices_row = c(adjacent_indices_row, i)
+          adjacent_indices_col = c(adjacent_indices_col, j-1)
+        }
+        if (j < ncol){
+          adjacent_indices_row = c(adjacent_indices_row, i)
+          adjacent_indices_col = c(adjacent_indices_col, j+1)
+        }
+        if (i < nrow & j < ncol){
+          adjacent_indices_row = c(adjacent_indices_row, i+1)
+          adjacent_indices_col = c(adjacent_indices_col, j+1)
+        }
+        if (i > 1 & j > 1){
+          adjacent_indices_row = c(adjacent_indices_row, i-1)
+          adjacent_indices_col = c(adjacent_indices_col, j-1)
+        }
+        if (i > 1 & j < ncol){
+          adjacent_indices_row = c(adjacent_indices_row, i-1)
+          adjacent_indices_col = c(adjacent_indices_col, j+1)
+        }
+        if (i < nrow & j > 1){
+          adjacent_indices_row = c(adjacent_indices_row, i+1)
+          adjacent_indices_col = c(adjacent_indices_col, j-1)
+        }
+        
+        adjacent_ind = cbind(adjacent_indices_row, adjacent_indices_col)
+        adj_cell_id = adjacent_ind[,1] + nrow* (adjacent_ind[,2] - 1)
+        #print(adj_cell_id)
+        # Assign MPA cell id to a new cluster
+        mpa_cell_id = i + nrow* (j - 1)
+        #print(mpa_cell_id)
+        if (length(big_cluster_list) < 1){
+          big_cluster_list = append(big_cluster_list, list(mpa_cell_id))
+          
+          } else{ 
+            found = FALSE
+  
+            for (n in 1:length(big_cluster_list)){ # on parcourt la liste
+              if (sum(adj_cell_id %in% big_cluster_list[[n]])>0){ # If one of the neighbours already in a cluster to add MPA to an already created cluster
+                big_cluster_list[[n]] = append(big_cluster_list[[n]],mpa_cell_id) # assign mpa cell to the given cluster
+                found = TRUE # si trouvé, assign found = TRUE
+              }
+            }
+            
+            if (found == FALSE){
+                big_cluster_list = append(big_cluster_list, mpa_cell_id) # else: assign to new cluster
+  
+            }
+        }
+      }
+    }
+  }
+  return(big_cluster_list)
+}
+
+
+```
+
+# Merge clusters
+```{r}
+merge_lists <- function(lst) {
+  merged_list <- list()
+  for (sub_list in lst) {
+    #print(sub_list)
+    merged <- FALSE
+    for (i in seq_along(merged_list)) {
+      #print(paste0("i:", i))
+      #print(paste0("length_intersection: ", length(intersect(sub_list, merged_list[[i]]))))
+      if (length(intersect(sub_list, merged_list[[i]])) > 0) {
+        merged_list[[i]] <- union(sub_list, merged_list[[i]])
+        #print(length(merged_list[[i]]))
+
+        merged <- TRUE
+        break
+      }
+      #print(merged_list)
+
+    }
+    if (!merged) {
+      merged_list <- c(merged_list, list(sub_list))
+      #print(merged_list)
+
+    }
+  }
+  return(merged_list)
+}
+
+```
+
+
+
+# Effort redistribution function
+```{r}
+redistribute_effort <- function(lst){
+
+  # Calculate border cells
+  for (i in 1:length(lst)){
+    border_cells_id = c()
+    border_cells_list =list()
+  
+    for (n in 1:length(lst[[i]])){
+      mpa_cell_id = lst[[i]][n]
+      
+      if ((mpa_cell_id - 1) %% nrow != 0) {
+        border_cells_id = c(border_cells_id, mpa_cell_id - 1)
+      }
+      if (mpa_cell_id %% nrow != 0) {
+        border_cells_id = c(border_cells_id, mpa_cell_id + 1)
+      }
+      if (mpa_cell_id - nrow > 0){
+        border_cells_id = c(border_cells_id, mpa_cell_id - nrow)
+      }
+      if (mpa_cell_id + nrow < (max_cell_id + 1)){
+        border_cells_id = c(border_cells_id, mpa_cell_id + nrow)
+      }
+      if ((mpa_cell_id + nrow < (max_cell_id + 1)) & ((mpa_cell_id - 1) %% nrow != 0)){
+        border_cells_id = c(border_cells_id, mpa_cell_id + nrow - 1)
+      }
+      if ((mpa_cell_id - nrow > 0) & (mpa_cell_id %% nrow != 0)){
+        border_cells_id = c(border_cells_id, mpa_cell_id - nrow + 1)
+      }
+      if ((mpa_cell_id - nrow > 0) & ((mpa_cell_id - 1) %% nrow != 0)){
+        border_cells_id = c(border_cells_id, mpa_cell_id - nrow - 1)
+      }
+      if ((mpa_cell_id + nrow < (max_cell_id + 1)) & ((mpa_cell_id - 1) %% nrow != 0)){
+        border_cells_id = c(border_cells_id, mpa_cell_id + nrow + 1)
+      }
+    }
+    border_cells_list = append(border_cells_list, list(border_cells_id))
+    border_cell_list_unique = sapply(border_cells_list, unique)
+    
+    MPA_cells_df = data.frame(lst[[i]])
+    colnames(MPA_cells_df) = "cell_id"
+    MPA_cells_df$MPA_cluster_number = i
+    
+    Border_cells_df = data.frame(border_cell_list_unique)
+    colnames(Border_cells_df) = "cell_id"
+    Border_cells_df$MPA_cluster_number = i
+    
+    if (i == 1){
+      MPA_dataframe = MPA_cells_df
+      Border_dataframe = Border_cells_df
+    } else{
+      MPA_dataframe = rbind(MPA_dataframe, MPA_cells_df)
+      Border_dataframe = rbind(Border_dataframe, Border_cells_df)
+  
+    }
+  }
+  
+  # Algo de redistribution par cluster de MPA
+  
+  Med = data.frame(1:max_cell_id)
+  colnames(Med) = "cell_id"
+  rate_vect = c(as.matrix(rate))
+  Med$rate = rate_vect
+  MPA_vect = c(as.matrix(MPA))
+  Med$MPA = MPA_vect
+  
+  
+  Med$effort= Med$rate/sum(rate_vect) # total effort so that sum effort = 1
+  sum(Med$effort)
+  Med$effort_corrected = Med$effort
+  sum(Med$effort_corrected)
+  
+  
+  # Loop over all clusters
+  
+  cluster_nb = max(MPA_dataframe$MPA_cluster_number) # Calculate the total number of MPA clusters
+  
+  for (i in 1:cluster_nb){
+    MPA_cells_id_cluster = MPA_dataframe$cell_id[MPA_dataframe$MPA_cluster_number == i] # Subset of MPA cells from one cluster
+    Border_cells_id_cluster = Border_dataframe$cell_id[Border_dataframe$MPA_cluster_number == i] # Subset border cells from one cluster
+    Borders_cells_sea = Border_cells_id_cluster[Med$MPA[Border_cells_id_cluster] == 0] # Check that the border cells are potential MPA candidates (no land, no existing MPA)
+    #print(Borders_cells_sea)
+    Effort_in_MPA_cluster = sum(Med$effort[MPA_cells_id_cluster]) # Sum total effort inside the MPA cluster
+    
+    Nb_cells_MPA_cluster_border = length(Borders_cells_sea) # Number of cells where effort can be reallocated around the MPA cluster
+    
+    Effort_correction = Effort_in_MPA_cluster/Nb_cells_MPA_cluster_border # Correction factor to add on to MPA cluster border cells
+    
+    Med$effort_corrected[Med$cell_id %in% MPA_cells_id_cluster] = 0 # Delete effort in MPA
+    Med$effort_corrected[Med$cell_id %in% Borders_cells_sea] = Med$effort_corrected[Med$cell_id %in% Borders_cells_sea] + Effort_correction # Increase effort in border cells outside the MPA
+    
+    print(paste0("MPA cluster ", i))
+    print(paste0("effort: ", sum(Med$effort)))
+    print(paste0("correction factor:", Effort_correction))
+    print(paste0("corrected effort: ", sum(Med$effort_corrected)))
+  
+  }
+  
+  
+  
+  Effort_matrix = matrix(Med$effort, ncol = ny, nrow = nx, byrow= FALSE) # convert list of cell id to matrix
+  Corrected_effort_matrix = matrix(Med$effort_corrected, ncol = ny, nrow = nx, byrow= FALSE) # convert list of cell id to matrix
+  sum(Effort_matrix)
+  return(sum(Corrected_effort_matrix))
+}
+```
+
+
+# DATA
+
+```{r}
+rate = read_csv(here("data/SAR_Mediterranean/Fishing_effort__density_boats_under60_filtered_satellitebiaiscorrected.csv"),  col_names = FALSE)
+
+
+nx = 83
+ny = 190
+max_cell_id = nx * ny
+nrow = nx
+ncol = ny
+
+MPA_dir = here("data/MPA_scenarios/")
+
+mpa_step = 30
+
+MPA.scenarios.name <- c("Mazor_scenario_8",
+                    "Mazor_scenario_9",
+                    "Micheli",
+                    "Existing_network",
+                    "Random/rep11",
+                    "Random/rep12",
+                    "Random/rep13",
+                    "Random/rep14",
+                    "Random/rep15",
+                    "Random/rep16",
+                    "Random/rep17",
+                    "Random/rep18",
+                    "Random/rep19",
+                    "Random/rep20",
+                    "EEZ-conservation/rep1",
+                    "EEZ-conservation/rep2",
+                    "EEZ-conservation/rep3",
+                    "EEZ-conservation/rep4",
+                    "EEZ-conservation/rep5",
+                    "EEZ-conservation/rep6",
+                    "EEZ-conservation/rep7",
+                    "EEZ-conservation/rep8",
+                    "EEZ-conservation/rep9",
+                    "EEZ-conservation/rep10")
+
+```
+
+# Compute fishing-the-lien redistribution for all MPA scenarios
+
+```{r}
+for (scen in 1:length(MPA.scenarios.name)){
+  scen = 11
+  for (mpa_coverage in 1:mpa_step){
+    mpa_coverage = 10
+    MPA = read_csv(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/csv_gpkg_files/", mpa_coverage, ".csv"), col_names =  FALSE)
+    MPA_clusters = MPA_cluster(MPA)
+    lst = merge_lists(MPA_clusters)
+    
+    fishing_the_line = redistribute_effort(lst)
+    
+    while (fishing_the_line != 1){
+      lst = merge_lists(lst)
+      fishing_the_line = redistribute_effort(lst)
+    }
+    
+    # RUN SCRIPT
+    # Calculate border cells
+      for (i in 1:length(lst)){
+        border_cells_id = c()
+        border_cells_list =list()
+      
+        for (n in 1:length(lst[[i]])){
+          mpa_cell_id = lst[[i]][n]
+          
+          if ((mpa_cell_id - 1) %% nrow != 0) {
+            border_cells_id = c(border_cells_id, mpa_cell_id - 1)
+          }
+          if (mpa_cell_id %% nrow != 0) {
+            border_cells_id = c(border_cells_id, mpa_cell_id + 1)
+          }
+          if (mpa_cell_id - nrow > 0){
+            border_cells_id = c(border_cells_id, mpa_cell_id - nrow)
+          }
+          if (mpa_cell_id + nrow < (max_cell_id + 1)){
+            border_cells_id = c(border_cells_id, mpa_cell_id + nrow)
+          }
+          if ((mpa_cell_id + nrow < (max_cell_id + 1)) & ((mpa_cell_id - 1) %% nrow != 0)){
+            border_cells_id = c(border_cells_id, mpa_cell_id + nrow - 1)
+          }
+          if ((mpa_cell_id - nrow > 0) & (mpa_cell_id %% nrow != 0)){
+            border_cells_id = c(border_cells_id, mpa_cell_id - nrow + 1)
+          }
+          if ((mpa_cell_id - nrow > 0) & ((mpa_cell_id - 1) %% nrow != 0)){
+            border_cells_id = c(border_cells_id, mpa_cell_id - nrow - 1)
+          }
+          if ((mpa_cell_id + nrow < (max_cell_id + 1)) & ((mpa_cell_id - 1) %% nrow != 0)){
+            border_cells_id = c(border_cells_id, mpa_cell_id + nrow + 1)
+          }
+        }
+        border_cells_list = append(border_cells_list, list(border_cells_id))
+        border_cell_list_unique = sapply(border_cells_list, unique)
+        
+        MPA_cells_df = data.frame(lst[[i]])
+        colnames(MPA_cells_df) = "cell_id"
+        MPA_cells_df$MPA_cluster_number = i
+        
+        Border_cells_df = data.frame(border_cell_list_unique)
+        colnames(Border_cells_df) = "cell_id"
+        Border_cells_df$MPA_cluster_number = i
+        
+        if (i == 1){
+          MPA_dataframe = MPA_cells_df
+          Border_dataframe = Border_cells_df
+        } else{
+          MPA_dataframe = rbind(MPA_dataframe, MPA_cells_df)
+          Border_dataframe = rbind(Border_dataframe, Border_cells_df)
+      
+        }
+      }
+      
+      # Algo de redistribution par cluster de MPA
+      
+      Med = data.frame(1:max_cell_id)
+      colnames(Med) = "cell_id"
+      rate_vect = c(as.matrix(rate))
+      Med$rate = rate_vect
+      MPA_vect = c(as.matrix(MPA))
+      Med$MPA = MPA_vect
+      
+      Med$effort= Med$rate/sum(rate_vect) 
+      Med$effort_corrected = Med$effort  # total effort so that sum effort = 1 (used is OSMOSE) - revient au même car OSMOSE restandardize derrière même si GSA prop et GSA uniform sont différents
+      
+      Med$effort= Med$rate/mean(rate_vect) # total effort so that mean effort = 1 (for plot)
+      sum(Med$effort, na.rm = T)
+      mean(Med$effort, na.rm = T)
+      sum(Med$rate, na.rm = T)
+      mean(Med$rate, na.rm = T)
+      
+      Med$effort = Med$rate
+      Med$effort_corrected = Med$rate
+      sum(Med$effort_corrected, na.rm = T)
+      mean(Med$effort_corrected, na.rm = T)
+
+      # Loop over all clusters
+      
+      cluster_nb = max(MPA_dataframe$MPA_cluster_number) # Calculate the total number of MPA clusters
+      
+      for (i in 1:cluster_nb){
+        MPA_cells_id_cluster = MPA_dataframe$cell_id[MPA_dataframe$MPA_cluster_number == i] # Subset of MPA cells from one cluster
+        Border_cells_id_cluster = Border_dataframe$cell_id[Border_dataframe$MPA_cluster_number == i] # Subset border cells from one cluster
+        Borders_cells_sea = Border_cells_id_cluster[Med$MPA[Border_cells_id_cluster] == 0] # Check that the border cells are potential MPA candidates (no land, no existing MPA)
+        #print(Borders_cells_sea)
+        Effort_in_MPA_cluster = sum(Med$effort[MPA_cells_id_cluster]) # Sum total effort inside the MPA cluster
+        
+        Nb_cells_MPA_cluster_border = length(Borders_cells_sea) # Number of cells where effort can be reallocated around the MPA cluster
+        
+        Effort_correction = Effort_in_MPA_cluster/Nb_cells_MPA_cluster_border # Correction factor to add on to MPA cluster border cells
+        
+        Med$effort_corrected[Med$cell_id %in% MPA_cells_id_cluster] = 0 # Delete effort in MPA
+        Med$effort_corrected[Med$cell_id %in% Borders_cells_sea] = Med$effort_corrected[Med$cell_id %in% Borders_cells_sea] + Effort_correction # Increase effort in border cells outside the MPA
+        
+        print(paste0("MPA cluster ", i))
+        print(paste0("effort: ", sum(Med$effort)))
+        print(paste0("correction factor:", Effort_correction))
+        print(paste0("corrected effort: ", sum(Med$effort_corrected)))
+      
+      }
+      
+    
+    # PLOTS --------------------------------------------------------------------
+    # Plot MPA clusters --------------------------------------------------------
+    Med2 = left_join(x = Med, y = MPA_dataframe, by = "cell_id")
+    Med2_MPA = Med2[Med2$MPA >0,]
+    
+    # Count the number of MPA clusters each cell is assigned to (should be 1 but not the case)
+    Med2_MPA_sum = Med2_MPA %>%
+      group_by(cell_id)%>%
+      summarise(nb_of_repeated_cells = n())
+    
+    Med_Med2_MPA_sum = left_join(x = Med, y = Med2_MPA_sum, by = "cell_id")
+    
+    MPA_cluster_nb_rast = rast(ncol=ny, 
+                        nrow=nx)
+    
+    nb_of_repeated_cells_matrix = matrix(Med_Med2_MPA_sum$nb_of_repeated_cells, ncol = ny, nrow = nx, byrow= FALSE) # convert list of cell id to matrix
+    values(MPA_cluster_nb_rast) = nb_of_repeated_cells_matrix
+
+    # create dirs
+    dir.create(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution"))
+    dir.create(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/csv_gpkg_files"))
+    dir.create(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/Plots"))
+      
+    
+    writeRaster(MPA_cluster_nb_rast, paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/Number_of_MPA_clusters_", mpa_coverage, ".tif"), overwrite=TRUE)
+
+    plot(MPA_cluster_nb_rast)
+
+    # Write csv
+    write.table(Corrected_effort_matrix,
+                    paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/csv_gpkg_files/Corrected_effort_fishing_the_line_", mpa_coverage, ".csv"),
+                    row.names = FALSE,
+                    col.names=FALSE,
+                    sep=",")
+  
+  }
+}
+
+
+```
+
+
+# Plot redistributed fishing effort map
+```{r}
+
+worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
+
+worldbounds_3035 = st_transform(worldbounds, 3035)
+
+# Plot corrected fishing-the-line effort ---------------------------------------
+Med2 = Med %>%
+  mutate(diff_fline = case_when(MPA == 0 ~ (effort_corrected - effort))) %>%
+  mutate(MPA = case_when(MPA < 0 ~ 0,
+                         TRUE ~ MPA))
+    
+Corrected_effort_matrix = matrix(Med2$diff_fline, ncol = ny, nrow = nx, byrow= FALSE) # convert list of cell id to matrix
+
+
+Effort_diff_fline = rast(ncol=190, 
+                            nrow=83, 
+                            xmin=2880851, 
+                            xmax=6680851, 
+                            ymin=855444, 
+                            ymax=2515444)
+values(Effort_diff_fline) = Corrected_effort_matrix #assign raster cell values
+ 
+brk = c(0, 0.001, seq(0.05,1,0.05), 2,3,4,5,6)
+ncol = length(brk) - 2
+mycol = c("white", Reds(n = ncol))
+
+# add polygon of MPAs
+Med_grid = st_read(here("data/shapefiles/Med_polygon.gpkg"))
+Med_grid$cell_ID = as.numeric(rownames(Med_grid))
+
+MPA = read_csv(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/csv_gpkg_files/", mpa_coverage, ".csv"), col_names =  FALSE)
+MPA.cells = unlist(as.list(t(MPA))) # unlisted not on the right way
+Med_grid$MPA = MPA.cells # 0 - unprotected, 1 - no-take area
+
+png(here("figures/fishing_effort_maps/diff_fishing-the-line.png"), height = 481, width = 994)
+
+image.plot(Effort_diff_fline, breaks = brk, col = mycol, axes = FALSE, legend.cex = 3)
+plot(worldbounds_3035$geometry,add=T, col= "#F0F0F0")
+MPA_polygons = Med_grid %>%
+ filter(MPA == 1)
+MPA_polygons_union = st_union(MPA_polygons)
+plot(MPA_polygons_union, add = T, col = "gray60", border = "black", lwd = 2)
+box()
+dev.off()
+
+
+```
+
