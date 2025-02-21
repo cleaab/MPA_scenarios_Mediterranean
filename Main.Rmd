@@ -1,0 +1,519 @@
+---
+title: "Plots-final-article1"
+author: "Clea Abello"
+date: '2024-02-21'
+output: html_document
+---
+### 1. INITIALISATION
+# 1.1. Loading libraries and function to read mulitple csv files
+
+```{r}
+rm(list=ls())
+#-----------------Loading packages-------------------
+
+#install.packages("osmose", repo="https://github.com/osmose-model/drat")
+
+pkgs <- c("tidyverse","here","cowplot","sf","RColorBrewer","ggpubr","raster","terra", "osmose", "ncdf4", "fields", "vegan", "heatmaply", "scales")
+nip <- pkgs[!(pkgs %in% installed.packages())]
+nip <- lapply(nip, install.packages, dependencies = TRUE)
+ip   <- unlist(lapply(pkgs, require, character.only = TRUE, quietly = TRUE))
+
+#-----------------Loading packages-------------------
+
+tbl_fread <- function(output.Folder, pattern){
+  files = list.files(output.Folder, pattern, full.names = TRUE) %>% 
+    map_df(~fread(.)) %>%
+    bind_rows()
+}
+
+```
+
+#1.2. Loading osmose config files for fishing mortality and species names
+
+```{r}
+# import classification of species by groups
+vertical_distrib = read.csv(here("data/vertical_distribution_species.csv")) %>%
+  dplyr::select(species_name, group) %>%
+  rownames_to_column("species_id") %>%
+  mutate(species_id = as.numeric(species_id) - 1)
+
+groups = unique(vertical_distrib$group)
+species_id = vertical_distrib$species_id
+
+# Define parameters
+Step = 30 
+NbofYears = 60
+Nbofreps = 30
+pas = 62 
+```
+
+
+```{r}
+lit.scenarios.name <- c("Mazor scenario 8",
+                    "Mazor scenario 9",
+                    "Micheli",
+                    "Existing network")
+
+random.scenarios.name <- c("Random 11",
+                    "Random 12",
+                    "Random 13",
+                    "Random 14",
+                    "Random 15",
+                    "Random 16",
+                    "Random 17",
+                    "Random 18",
+                    "Random 19",
+                    "Random 20",
+		                "EEZ-conservation 1",
+		                "EEZ-conservation 2",
+	                  "EEZ-conservation 3",
+                    "EEZ-conservation 4",
+                    "EEZ-conservation 5",
+                    "EEZ-conservation 6",
+                    "EEZ-conservation 7",
+                    "EEZ-conservation 8",
+                    "EEZ-conservation 9",
+                    "EEZ-conservation 10")
+
+Fishing_scenario_name = c("Fishing-the-line", "Proportional by GSA", "Uniform by GSA")
+Fishing_scenario = c("Fishing-the-line", "GSA-prop", "GSA-uniform")
+
+MPA_scenarios_name <- c("S5-Mazor GFCM",
+                    "S6-Mazor SAUP",
+                    "S4-Micheli",
+                    "S1-Current")
+
+lit.mpa.mask.dir <- c(here("data/MPA_scenarios/Mazor_scenario_8/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Mazor_scenario_9/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Micheli/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Existing_network/csv_gpkg_files"))
+
+
+random.mpa.mask.dir <- c(here("data/MPA_scenarios/Random/rep11/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep12/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep13/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep14/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep15/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep16/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep17/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep18/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep19/csv_gpkg_files"),
+                       here("data/MPA_scenarios/Random/rep20/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep1/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep2/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep3/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep4/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep5/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep6/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep7/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep8/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep9/csv_gpkg_files"),
+                       here("data/MPA_scenarios/EEZ-conservation/rep10/csv_gpkg_files"))
+
+```
+
+# Load palettes for plots
+```{r}
+mpa_colors <- c("Existing network" = "gold", 
+                "Random 11" = "gray60", 
+                "Random 12" = "gray60",
+                "Random 13" = "gray60",
+                "Random 14" = "gray60",
+                "Random 15" = "gray60",
+                "Random 16" = "gray60",
+                "Random 17" = "gray60",
+                "Random 18" = "gray60",
+                "Random 19" = "gray60",
+                "Random 20" = "gray60",
+
+                "EEZ-conservation 1" = "black", 
+                "EEZ-conservation 2" = "black", 
+                "EEZ-conservation 3" = "black", 
+                "EEZ-conservation 4" = "black", 
+                "EEZ-conservation 5" = "black", 
+                "EEZ-conservation 6" = "black", 
+                "EEZ-conservation 7" = "black", 
+                "EEZ-conservation 8" = "black", 
+                "EEZ-conservation 9" = "black", 
+                "EEZ-conservation 10" = "black", 
+
+                "Micheli" = "darkorange", 
+                "Mazor scenario 8" = "darkslateblue", 
+                "Mazor scenario 9" = "darkorchid")
+
+
+```
+
+
+## PLOTS
+
+# Load all scripts for figures
+```{r}
+
+figures_scripts_folder = here::here("code/create_figures")
+lapply(list.files(path = figures_scripts_folder, pattern = "\\.R$", full.names = TRUE), source)
+
+```
+
+# Load data function
+```{r}
+load_multiple_csv <- function(folder_path) {
+  file_list <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
+  data_list <- lapply(file_list, read.csv, stringsAsFactors = FALSE)
+  return(data_list)
+}
+```
+
+
+# Figure 1 - changes in biomass and catch science informed/random
+```{r}
+
+area = "Entire Mediterranean Sea"
+
+# load data
+biomass_data <- load_multiple_csv(here("data/total_biomass"))
+
+Biom_NoCC_fline <- biomass_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+
+catch_data <- load_multiple_csv(here("data/total_catch"))
+
+
+Catch_NoCC_fline <- catch_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+
+# FIGURE 
+legend_scenarios <- c("Existing network", "Micheli", "Random 11", "Mazor scenario 8", "EEZ-conservation 1", "Mazor scenario 9")
+
+group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "EEZ-scale conservation", "Mazor scenario 9")
+
+legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM", "S3-Random EEZ", "S6-Mazor SAUP")
+
+plot.biomass.catch.change.Med(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline, Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, save = TRUE)
+
+```
+
+# Figure 2 - changes in biomass and catch relative to before MPA establishment at 10% for each fishing redistribution strategy according to the distance to the MPA
+```{r}
+
+area = "Entire Mediterranean Sea"
+
+# load data
+biomass_data <- load_multiple_csv(here("data/total_biomass"))
+
+Biom_NoCC_fline <- biomass_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+
+catch_data <- load_multiple_csv(here("data/total_catch"))
+
+
+Catch_NoCC_fline <- catch_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+# Figure for Mazor scenario 8 at 10% coverage
+plot.biomass.catch.change.across.MPA(lit.mpa.mask.dir, scen = 1, mpa_scenario = "Mazor_scenario_8", mpa_coverage = 10, save = TRUE)
+```
+
+# Figure 3 - Changes in catch and biomass by groups (3A) and changes in small pelagic biomass inside MPAs (3B)
+```{r}
+
+# load data
+biomass_by_groups_data <- load_multiple_csv(here("data/biomass_by_groups"))
+
+biomass_by_groups <- biomass_by_groups_data[[2]] #GSA prop
+
+catch_by_groups_data <- load_multiple_csv(here("data/catch_by_groups"))
+
+catch_by_groups <- catch_by_groups_data[[2]] #GSA prop
+
+# FIGURE
+sp_group_levels <- c("Medium & large pelagic", "Medium & large demersal", "Medium & large benthic", "Small benthic", "Small pelagic", "Crustacean","Cephalopod", "Small demersal")
+
+legend_scenarios <- c("Existing network", "Random 11", "EEZ-conservation 1", "Micheli", "Mazor scenario 8", "Mazor scenario 9")
+
+group_levels <- c("Existing network", "Random", "EEZ-scale conservation", "Micheli", "Mazor scenario 8", "Mazor scenario 9")
+
+legend_labels <- c("S1-Current", "S2-Random basin", "S3-Random EEZ", "S4-Micheli", "S5-Mazor GFCM", "S6-Mazor SAUP")
+
+plot.fig3(biomass_by_groups, catch_by_groups, scen=1, f=2, save = TRUE) #  scen = 1 - Mazor scenario 8, f = 1 - GSA prop
+
+
+
+# other scenarios - Supp mat (appendix A6)
+
+# Current and literature (S1, S4-S6)
+for (scen in 1:4){
+  plot.fig.A6.other.scenarios.S1.S4.S5.S6(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
+
+}
+
+# Random basin (average of 10) (S2)
+plot.fig.A6.other.scenarios.S2(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+
+# Random EEZ (average of 10) (S3)
+plot.fig.A6.other.scenarios.S3(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+
+
+```
+
+
+# Figure 4 - Large Fish Indicator (4A) and taxonomic alpha-diversity (4B) inside and outside MPAs
+```{r}
+
+# load data
+
+# LFI
+LFI_data <- load_multiple_csv(here("data/large_fish_indicator"))
+
+LFI_Fline <- LFI_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") 
+
+LFI_GSA_prop <- LFI_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") 
+
+LFI_GSA_uniform <- LFI_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") 
+
+# Diversity
+diversity_data <- load_multiple_csv(here("data/diversity"))
+
+Mean_diversity_inside_GSA_prop_lit = diversity_data[[1]]
+
+Mean_diversity_inside_GSA_prop_random_basin = diversity_data[[2]]
+
+Mean_diversity_inside_GSA_prop_random_EEZ = diversity_data[[3]]
+
+Mean_diversity_outside_GSA_prop_lit = diversity_data[[4]]
+
+Mean_diversity_outside_GSA_prop_random_basin = diversity_data[[5]]
+
+Mean_diversity_outside_GSA_prop_random_EEZ = diversity_data[[6]]
+
+
+# FIGURE
+legend_scenarios <- c("Existing network", "Micheli", "Random 11", "Mazor scenario 8", "EEZ-conservation 1", "Mazor scenario 9")
+
+
+group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "EEZ-scale conservation", "Mazor scenario 9")
+
+
+legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM", "S3-Random EEZ", "S6-Mazor SAUP")
+  
+
+plot.fig4(height_value = 11, width_value = 11, save = TRUE)
+
+```
+
+
+# Fig 5 - RDA
+```{r}
+# load data
+area = "Entire Mediterranean Sea"
+
+biomass_data <- load_multiple_csv(here("data/total_biomass"))
+
+Biom_NoCC_fline <- biomass_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+
+catch_data <- load_multiple_csv(here("data/total_catch"))
+
+
+Catch_NoCC_fline <- catch_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") %>%
+  filter(mpa == area)
+
+# LFI
+LFI_data <- load_multiple_csv(here("data/large_fish_indicator"))
+
+LFI_Fline <- LFI_data[[1]] %>%
+  mutate(Fishing_scenario = "Fishing-the-line") 
+
+LFI_GSA_prop <- LFI_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") 
+
+LFI_GSA_uniform <- LFI_data[[3]] %>%
+  mutate(Fishing_scenario = "Uniform by GSA") 
+
+# Diversity
+diversity_data <- load_multiple_csv(here("data/diversity"))
+
+Mean_diversity_inside_GSA_prop_lit = diversity_data[[1]]
+
+Mean_diversity_inside_GSA_prop_random_basin = diversity_data[[2]]
+
+Mean_diversity_inside_GSA_prop_random_EEZ = diversity_data[[3]]
+
+Mean_diversity_outside_GSA_prop_lit = diversity_data[[4]]
+
+Mean_diversity_outside_GSA_prop_random_basin = diversity_data[[5]]
+
+Mean_diversity_outside_GSA_prop_random_EEZ = diversity_data[[6]]
+
+# load spatial metrics
+spatial_metrics <- load_multiple_csv(here("data/spatial_metrics"))
+
+Distance_to_coast = spatial_metrics[[1]]
+Metrics_mpa_scenarios = spatial_metrics[[2]]
+
+plot.RDA(scaling_type = 1)
+plot.RDA(scaling_type = 2)
+
+#plot heatmap
+plot.heatmap.X.vars()
+
+```
+
+# Figure A2.2 - cumulated ship density per pixel
+```{r}
+shipping_routes = raster(here("data/SAR_Mediterranean/shipping/shipping.tif")) # WGS84
+
+files <- list.files(here("data/SAR_Mediterranean"), pattern="Rdata", full.names = T)
+data_list = lapply(files, load, .GlobalEnv)
+sar_2019 <- rbind(S1A_2019_medsea_detections, S1B_2019_medsea_detections)
+
+files.source = list.files(here("code/fishing_effort/process"), full.names = T)
+sapply(files.source, source)
+
+sar_all_cleaned = data_clean(sar_2019) # WGS84
+
+
+# plot
+shipping_plot(shipping_routes, sar_all_cleaned, SAR_data_noRFI, save = TRUE)
+```
+
+# Figure A5.1 & A5.2 - variogram
+```{r}
+area = "Entire Mediterranean Sea"
+
+# load data
+biomass_data <- load_multiple_csv(here("data/total_biomass"))
+
+Biomass <- biomass_data[[2]] %>% # proportional redistribution strategy
+  filter(mpa == area)
+
+catch_data <- load_multiple_csv(here("data/total_catch"))
+
+
+Catch <- catch_data[[2]] %>%
+  filter(mpa == area) 
+
+# fig A5.1
+
+plot.figA5.1(Biomass, Catch, save = TRUE)
+
+# fig A5.2
+
+all_mpa_scenarios = c(lit.scenarios.name, random.scenarios.name)
+plot.figA5.2(Biomass, Catch, nreps = 30, save = TRUE)
+
+```
+# Figure A5.3 - spatial maps of total biomass and catch
+```{r}
+
+worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
+worldbounds_3035 = st_transform(worldbounds, 3035)
+
+mpa.mask.dir = lit.mpa.mask.dir 
+# mpa.mask.dir = random.mpa.mask.dir
+
+# only for scenario S5- Mazor-GFCM
+
+plot.fig.A5(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_coverage = 10, mpa.mask.dir)
+```
+
+
+# Figure A6.1 - small pelagics analysis
+```{r}
+
+outputDir.nompa = file.path(here("data", "small_pelagics_biomass", "Nompa", "biomass_yield"))
+
+outputDir.mpa.10 = file.path(here("data", "small_pelagics_biomass", "Mazor_scenario_8", "output_mpa_10", "biomass_yield"))
+
+outputDir.mpa.30 = file.path(here("data", "small_pelagics_biomass", "Mazor_scenario_8", "output_mpa_30", "biomass_yield"))
+
+plot.fig.A6.1(outputDir.nompa, outputDir.mpa.10, outputDir.mpa.30, vertical_distrib)
+```
+
+
+# Figure A6.2 - predation pressure
+```{r}
+outputDir.nompa = file.path(here("data/predation_pressure/Pred_pressure_NoMPA"))
+outputDir.mpa = file.path(here("data/predation_pressure/Pred_pressure_Mazor8_10pct_GSAprop"))
+
+plot.fig.A6.2(save = TRUE)
+```
+
+
+
+# Figure A7.1 - alpha-taxonomic divesity inside MPAs before and after their establishment
+```{r}
+plot.figA7.1(save = TRUE)
+```
+
+# Figure A7.2 - alpha-taxonomic divesity and abundance maps before MPA establishment
+```{r}
+plot.figA7.2(save = TRUE)
+```
+# Figure A8.1 - heatmap RDA
+```{r}
+
+```
+
+
