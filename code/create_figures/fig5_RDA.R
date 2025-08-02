@@ -205,7 +205,7 @@ compute.RDA <- function(){
   return(spe.rda)
 }
 
-scaling_type = 1
+
 plot.RDA <- function(scaling_type){
   
   # scaling_type = 1 or 2
