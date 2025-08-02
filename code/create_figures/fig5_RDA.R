@@ -205,6 +205,7 @@ compute.RDA <- function(){
   return(spe.rda)
 }
 
+scaling_type = 1
 plot.RDA <- function(scaling_type){
   
   # scaling_type = 1 or 2
@@ -221,9 +222,9 @@ plot.RDA <- function(scaling_type){
   perc <- round(100*(summary(spe.rda)$cont$importance[2, 1:2]), 2)
   
   ## extract scores - these are coordinates in the RDA space
-  sc_si <- scores(spe.rda, display="sites", choices=c(1,2), scaling=2)
-  sc_sp <- scores(spe.rda, display="species", choices=c(1,2), scaling=2)
-  sc_bp <- scores(spe.rda, display="bp", choices=c(1, 2), scaling=2)
+  sc_si <- scores(spe.rda, display="sites", choices=c(1,2), scaling=scaling_type)
+  sc_sp <- scores(spe.rda, display="species", choices=c(1,2), scaling=scaling_type)
+  sc_bp <- scores(spe.rda, display="bp", choices=c(1, 2), scaling=scaling_type)
   
   ## Custom triplot, step by step
   
@@ -265,7 +266,7 @@ plot.RDA <- function(scaling_type){
   # add points for site scores
   colvec <- c("gold", "gray60", "gray5", "darkorange", "darkslateblue", "darkorchid")
   with(X_matrix, points(spe.rda, display = "sites", col= colvec[scenario],
-                                   scaling = 1, pch = 21, cex = 0.7, bg = colvec[scenario]))
+                                   scaling = scaling_type, pch = 21, cex = 0.7, bg = colvec[scenario]))
   
   
   dev.off()
