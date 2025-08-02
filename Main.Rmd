@@ -13,7 +13,7 @@ rm(list=ls())
 
 #install.packages("osmose", repo="https://github.com/osmose-model/drat")
 
-pkgs <- c("tidyverse","here","cowplot","sf","RColorBrewer","ggpubr","raster","terra", "osmose", "ncdf4", "fields", "vegan", "heatmaply", "scales")
+pkgs <- c("tidyverse","here","cowplot","sf","RColorBrewer","ggpubr","raster","terra", "osmose", "ncdf4", "fields", "vegan", "heatmaply", "scales", "ggcorrplot", "landscapemetrics")
 nip <- pkgs[!(pkgs %in% installed.packages())]
 nip <- lapply(nip, install.packages, dependencies = TRUE)
 ip   <- unlist(lapply(pkgs, require, character.only = TRUE, quietly = TRUE))
@@ -165,7 +165,7 @@ load_multiple_csv <- function(folder_path) {
 ```
 
 
-# Figure 1 - changes in biomass and catch science informed/random
+# Figure 1 - changes in total biomass and catch science in the Mediterranean
 ```{r}
 
 area = "Entire Mediterranean Sea"
@@ -210,6 +210,10 @@ group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "
 legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM", "S3-Random EEZ", "S6-Mazor SAUP")
 
 plot.biomass.catch.change.Med(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline, Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, save = TRUE)
+
+
+# Wilcoxon statistical test - difference between S1 and S2-S3 at 10% coverage
+Statistical.difference.scenarios(Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, coverage_level = 10)
 
 ```
 
@@ -344,7 +348,8 @@ plot.fig4(height_value = 11, width_value = 11, save = TRUE)
 ```
 
 
-# Fig 5 - RDA
+# Figure 5 - RDA 
+Labels for final figure were added manually.
 ```{r}
 # load data
 area = "Entire Mediterranean Sea"
@@ -406,6 +411,25 @@ Mean_diversity_outside_GSA_prop_random_basin = diversity_data[[5]]
 
 Mean_diversity_outside_GSA_prop_random_EEZ = diversity_data[[6]]
 
+# calculate spatial metrics
+metrics_calculated = TRUE
+
+if (metrics_calculated == FALSE){
+  
+  MPA_scenarios = length(c(lit.mpa.mask.dir, random.mpa.mask.dir))
+  scenarios = c(lit.scenarios.name, random.scenarios.name)
+
+  # Load contour of Med grid
+  Med_grid_sea_contour = st_read(here("data/shapefiles/Med_grid_sea_contour.shp"))
+  plot(Med_grid_sea_contour$geometry)
+  
+  # Calculate average network distance to coast for 10% coverage
+  calculate.network.distance.to.coast.fn(Med_grid_sea_contour, MPA_scenarios, scenarios, lit.mpa.mask.dir, random.mpa.mask.dir, mpa_coverage = 10, save = TRUE)
+    
+  # Calculate metrics from landscapemetrics R package v 2.1.4
+  calculate.metrics.landscapemetrics.fn.2(MPA_scenarios, scenarios, lit.mpa.mask.dir, random.mpa.mask.dir, mpa_coverage = 10, save = TRUE)
+}
+
 # load spatial metrics
 spatial_metrics <- load_multiple_csv(here("data/spatial_metrics"))
 
@@ -415,12 +439,153 @@ Metrics_mpa_scenarios = spatial_metrics[[2]]
 plot.RDA(scaling_type = 1)
 plot.RDA(scaling_type = 2)
 
-#plot heatmap
-plot.heatmap.X.vars()
+```
+
+# Figure 5 - Spatial metrics selection
+```{r}
+Response_vars = create.response.var.matrix(coverage_level = 10)
+
+All_explanatory_var = Metrics_mpa_scenarios %>%
+    dplyr::select(metric, value, scenario) %>%
+    pivot_wider(names_from = metric, values_from = value) %>%
+    left_join(Distance_to_coast, by="scenario") %>%
+    dplyr::select(-iji) %>%
+    rename("distance_to_coast" = "mean_distance_to_coast") %>%
+    column_to_rownames(var="scenario")
+
+All_explanatory_var_standardized = decostand(All_explanatory_var, method = "standardize")
+
+Response_vars <- Response_vars[match(rownames(All_explanatory_var_standardized), rownames(Response_vars)), ]
+
+
+spe.rda <- rda(Response_vars ~ ., data = All_explanatory_var_standardized)
+
+set.seed(123)  
+
+backward.sel <- ordistep(rda(Response_vars ~ ., data = All_explanatory_var_standardized), # lower model limit (simple!)
+                         scope = formula(spe.rda), # upper model limit (the "full" model)
+                         direction = "backward",
+                         R2scope = TRUE, # can't surpass the "full" model's R2
+                         pstep = 1000,
+                         trace = TRUE) # change to TRUE to see the selection process!
+
+# Set number of repetitions
+n_repeats <- 100
+seeds <- sample(1:10000, n_repeats)
+
+# Store selected variables from each iteration
+selected_vars_list <- vector("list", n_repeats)
+
+for (i in 1:n_repeats) {
+  set.seed(seeds[i])
+
+  # Full model
+  full_model <- rda(Response_vars ~ ., data = All_explanatory_var_standardized)
+
+  # Stepwise backward selection
+  step_model <- ordistep(
+    rda(Response_vars ~ ., data = All_explanatory_var_standardized),
+    scope = formula(full_model),
+    direction = "backward",
+    R2scope = TRUE,
+    pstep = 1000,
+    trace = FALSE  # Change to TRUE to observe process
+  )
+
+  # Extract selected variables
+  selected_vars_list[[i]] <- attr(step_model$terms, "term.labels")
+}
+
+# Count selection frequencies
+selected_counts <- table(unlist(selected_vars_list))
+selected_freq <- sort(selected_counts / n_repeats, decreasing = TRUE)
+
+# Print selection frequencies
+print(selected_freq)
+
+# Get all unique variables that were selected at least once
+selected_vars <- names(selected_freq)
+
+# Print the list
+print(selected_vars)
+length(selected_vars)
+
+### Variable selection -----------------------------
+Selected_explanatory_var <- All_explanatory_var_standardized %>%
+    dplyr::select(all_of(selected_vars))
+
+# correlation Heatmap of all variables (Supplementary Figure 8.1)
+cor_matrix <- cor(Selected_explanatory_var, use = "complete.obs")
+ggcorrplot(cor_matrix,
+           type = "full",
+           lab = TRUE,
+           method = "square",
+           colors = c("#6D9EC1", "white", "#E46726"),
+           title = "Pearson Correlation Heatmap",
+           hc.order = TRUE)
+
+ggsave(here("figures/appendix/Supplementary_Figure_8.1_heatmap_all_vars.png"), dpi = 300, height = 10, width = 10)
+
+rda_final <- rda(Response_vars ~ ., data = Selected_explanatory_var)
+RsquareAdj(rda_final)
+summary(rda_final)
+
+# Step 1 - Remove highly correlated variables to pladj (correlation > 0.6)
+Selected_explanatory_var <- All_explanatory_var_standardized %>%
+    dplyr::select(all_of(selected_vars), -total_distance_to_coast, -pd, -gyrate_mn, -para_cv, -mesh, -lpi, -pafrac, -gyrate_sd)
+
+# correlation Heatmap of all variables (Supplementary Figure 8.1)
+cor_matrix <- cor(Selected_explanatory_var, use = "complete.obs")
+ggcorrplot(cor_matrix,
+           type = "full",
+           lab = TRUE,
+           method = "square",
+           colors = c("#6D9EC1", "white", "#E46726"),
+           title = "Pearson Correlation Heatmap",
+           hc.order = TRUE)
+
+
+# Step 2 - Remove highly correlated to distance_to_coast
+Selected_explanatory_var <- All_explanatory_var_standardized %>%
+    dplyr::select(all_of(selected_vars), -total_distance_to_coast, -pd, -gyrate_mn, -para_cv, -mesh, -lpi, -pafrac, -gyrate_sd, -frac_mn, -ndca, -para_mn, -shape_cv, -para_sd, -shape_sd)
+
+# correlation Heatmap of all variables (Supplementary Figure 8.1)
+cor_matrix <- cor(Selected_explanatory_var, use = "complete.obs")
+ggcorrplot(cor_matrix,
+           type = "full",
+           lab = TRUE,
+           method = "square",
+           colors = c("#6D9EC1", "white", "#E46726"),
+           title = "Pearson Correlation Heatmap",
+           hc.order = TRUE)
+
+
+
+# Final selection of variables according to multicollinearity
+Final_selected_explanatory_var <- All_explanatory_var_standardized %>%
+  dplyr::select("pladj", "np", "shape_mn", "distance_to_coast")
+
+cor_matrix <- cor(Final_selected_explanatory_var, use = "complete.obs")
+ggcorrplot(cor_matrix,
+           type = "full",
+           lab = TRUE,
+           method = "square",
+           colors = c("#6D9EC1", "white", "#E46726"),
+           title = "Pearson Correlation Heatmap",
+           hc.order = TRUE)
+
+ggsave(here("figures/appendix/Supplementary_Figure_8.2_heatmap_selected_vars.png"), dpi = 300, height = 10, width = 10)
+
+rda_final <- rda(Response_vars ~ ., data = Final_selected_explanatory_var)
+RsquareAdj(rda_final)
+summary(rda_final)
+
+plot(rda_final, scaling = 1)
+plot(rda_final, scaling = 2)
 
 ```
 
-# Figure A2.2 - cumulated ship density per pixel
+# Figure S2.1 - cumulated ship density per pixel
 ```{r}
 shipping_routes = raster(here("data/SAR_Mediterranean/shipping/shipping.tif")) # WGS84
 
@@ -438,7 +603,7 @@ sar_all_cleaned = data_clean(sar_2019) # WGS84
 shipping_plot(shipping_routes, sar_all_cleaned, SAR_data_noRFI, save = TRUE)
 ```
 
-# Figure A5.1 & A5.2 - variogram
+# Figure S5.1 & S5.2 - variogram
 ```{r}
 area = "Entire Mediterranean Sea"
 
@@ -454,17 +619,17 @@ catch_data <- load_multiple_csv(here("data/total_catch"))
 Catch <- catch_data[[2]] %>%
   filter(mpa == area) 
 
-# fig A5.1
+# fig S5.1
 
 plot.figA5.1(Biomass, Catch, save = TRUE)
 
-# fig A5.2
+# fig S5.2
 
 all_mpa_scenarios = c(lit.scenarios.name, random.scenarios.name)
 plot.figA5.2(Biomass, Catch, nreps = 30, save = TRUE)
 
 ```
-# Figure A5.3 - spatial maps of total biomass and catch
+# Figure S5.3 - spatial maps of total biomass and catch
 ```{r}
 
 worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
@@ -479,7 +644,7 @@ plot.fig.A5(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_cover
 ```
 
 
-# Figure A6.1 - small pelagics analysis
+# Figure S6.1 - small pelagics analysis
 ```{r}
 
 outputDir.nompa = file.path(here("data", "small_pelagics_biomass", "Nompa", "biomass_yield"))
@@ -492,7 +657,7 @@ plot.fig.A6.1(outputDir.nompa, outputDir.mpa.10, outputDir.mpa.30, vertical_dist
 ```
 
 
-# Figure A6.2 - predation pressure
+# Figure S6.2 - predation pressure
 ```{r}
 outputDir.nompa = file.path(here("data/predation_pressure/Pred_pressure_NoMPA"))
 outputDir.mpa = file.path(here("data/predation_pressure/Pred_pressure_Mazor8_10pct_GSAprop"))
@@ -501,19 +666,19 @@ plot.fig.A6.2(save = TRUE)
 ```
 
 
-
-# Figure A7.1 - alpha-taxonomic divesity inside MPAs before and after their establishment
+# Figure S7.1 - alpha-taxonomic divesity inside MPAs before and after their establishment
 ```{r}
 plot.figA7.1(save = TRUE)
 ```
 
-# Figure A7.2 - alpha-taxonomic divesity and abundance maps before MPA establishment
+# Figure S7.2 - alpha-taxonomic divesity and abundance maps before MPA establishment
 ```{r}
 plot.figA7.2(save = TRUE)
 ```
-# Figure A8.1 - heatmap RDA
-```{r}
 
+# Figure S8.1 - heatmap RDA
+```{r}
+plot.heatmap.X.vars()
 ```
 
 
