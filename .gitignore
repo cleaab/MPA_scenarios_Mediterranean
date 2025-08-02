@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+
+# sandbox
+sandbox/
+
+# data folder (too large)
+data/
+
+# figures folder
+figures/
