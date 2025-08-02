@@ -415,7 +415,7 @@ plot.fig4 <- function(height_value, width_value, save){
                                                plot.title = element_blank(),
                                                legend.position = "none",
                                                plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
-    labs(subtitle = "Inside NT MPAs") +
+    labs(subtitle = "Inside MPAs") +
     theme(plot.margin = margin(0,0,0,0.5, "cm")) # 2 -right, 4 - left
   
   LFI_outside_GSAprop = plot.LFI.outside(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline)
@@ -426,7 +426,7 @@ plot.fig4 <- function(height_value, width_value, save){
                                                  plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic"),
                                                  legend.position = "none",
                                                  plot.title = element_blank()) +
-    labs(subtitle = "Outside NT MPAs") +
+    labs(subtitle = "Outside MPAs") +
     theme(plot.margin = margin(0,0.5,0,0, "cm")) # 2 -right, 4 - left
   
   
@@ -446,7 +446,7 @@ plot.fig4 <- function(height_value, width_value, save){
     legend.title = element_blank(),
     plot.title = element_blank(),
     plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
-    labs(subtitle = "Inside NT MPAs") +
+    labs(subtitle = "Inside MPAs") +
     theme(plot.margin = margin(0,0,0.5,0.5, "cm")) # 2 -right, 4 - left
   
   Diversity_outside_after_MPAs_GSAprop = plot.diversity.outside(Mean_diversity_outside_GSA_prop_lit, Mean_diversity_outside_GSA_prop_random_basin, Mean_diversity_outside_GSA_prop_random_EEZ)
@@ -456,7 +456,7 @@ plot.fig4 <- function(height_value, width_value, save){
                                                                         legend.text = element_text(size=14),
                                                                         plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic"),
                                                                         plot.title = element_blank()) +
-    labs(subtitle = "Outside NT MPAs") +
+    labs(subtitle = "Outside MPAs") +
     theme(plot.margin = margin(0,0.5,0.5,0, "cm")) # 2 -right, 4 - left
   
   
