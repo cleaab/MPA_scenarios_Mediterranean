@@ -69,5 +69,3 @@ plot.figA7.2 <- function(save = TRUE){
   }
   
 }
-  
-
