@@ -5,7 +5,7 @@ Model code and configuration to run the MPA scenarios are accessible on zenodo: 
 
 10.5281/zenodo.14039492
 
-Raw model outputs used for the analyis exceeded 30 Terabytes and could not be uploaded on Zenodo, but aggregated outputs used for the analysis and the scripts to generate them are available in the data folder on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16734084.svg)](https://doi.org/10.5281/zenodo.16734084)
+Raw model outputs used for the analyis exceeded 30 Terabytes and could not be uploaded on Zenodo, but aggregated outputs used for the analysis and the scripts to generate them are available in the data folder on Zenodo: 
 
 
 Aggregated outputs and other data used for the analysis is accessible on zenodo: 10.5281/zenodo.14039492
@@ -23,5 +23,5 @@ The code directory regroups functions used for:
 - scripts to calculate indicators from raw outputs (calculate_indicators)
 - scripts to create figures (create_figures)
 
-
+Scripts in this repository are also accessible on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16734084.svg)](https://doi.org/10.5281/zenodo.16734084)
 
