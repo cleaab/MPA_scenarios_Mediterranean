@@ -1,0 +1,9 @@
+
+Spatial metrics selection frequency
+
+total_distance_to_coast                shape_mn                shape_sd               gyrate_sd               gyrate_mn                 para_mn                  pafrac                   pladj 
+                   0.88                    0.87                    0.86                    0.78                    0.72                    0.66                    0.50                    0.49 
+                     pd                   pland                shape_cv                    mesh                 frac_mn       distance_to_coast                 para_sd                     lpi 
+                   0.48                    0.48                    0.48                    0.42                    0.35                    0.14                    0.09                    0.02 
+                   ndca                 para_cv 
+                   0.02                    0.02 
