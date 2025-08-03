@@ -17,7 +17,8 @@ The code directory regroups functions used for:
 - redistributing fishing effort according to the 3 redistribution strategies (fishing_redistribution_strategies)
 - scripts to spatialize fishing effort using Synthetic Aperture Radar imagery (fishing_effort)
 - scripts to calculate spatial metrics used for the Redundancy Analysis
-- scripts to create figures
+- scripts to calculate indicators from raw outputs (calculate_indicators)
+- scripts to create figures (create_figures)
 
 
 
