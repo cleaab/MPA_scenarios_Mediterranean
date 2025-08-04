@@ -29,3 +29,8 @@ Scripts in this repository are also accessible on Zenodo: [![DOI](https://zenodo
 * Shapefiles of Marine Protected Areas in the Mediterranean Sea were downloaded from [MAPAMED](https://www.mapamed.org/) (MAPAMED, the database of MArine Protected Areas in the MEDiterranean. 2019 edition, version 2.)
   
 Main contact: Clea Abello [clea.abello@gmail.com](mailto:clea.abello@gmail.com)
+
+```r
+utils::sessionInfo()
+```
+
