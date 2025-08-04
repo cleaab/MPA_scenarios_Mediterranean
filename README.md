@@ -1,5 +1,5 @@
 # MPA_scenarios_Mediterranean
-This repository contains data and code used to obtain results of the paper Abello et al.  (202?) - Design matters: Science-informed marine protected area networks outperform random and opportunistic designs submitted in NPJ Ocean Sustainability.
+This repository contains data and code used to obtain results of the paper Abello et al.  (202?) - Science-informed marine protected area networks outperform random and opportunistic designs submitted in NPJ Ocean Sustainability.
 
 Model code and configuration to run the MPA scenarios are accessible on zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492)
 
