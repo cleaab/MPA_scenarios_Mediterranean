@@ -200,7 +200,7 @@ compute.RDA <- function(){
   Y_matrix <- Y_matrix[match(rownames(X_matrix), rownames(Y_matrix)), ]
   
   spe.rda <- rda(Y_matrix ~ ., data = X_matrix)
-  RsquareAdj = RsquareAdj(spe.rda) # R2.adj = 0.8135843
+  RsquareAdj = RsquareAdj(spe.rda) # R2.adj = 0.815943
   
   return(spe.rda)
 }
