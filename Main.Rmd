@@ -5,28 +5,109 @@ date: '2024-02-21'
 output: html_document
 ---
 ### 1. INITIALISATION
-# 1.1. Loading libraries and function to read mulitple csv files
+# 1.1. Loading libraries from packages
 
 ```{r}
 rm(list=ls())
 #-----------------Loading packages-------------------
 
-#install.packages("osmose", repo="https://github.com/osmose-model/drat")
+# List of required packages
+pkgs <- c("tidyverse", "here", "cowplot", "sf", "RColorBrewer", "ggpubr",
+          "raster", "terra", "osmose", "ncdf4", "fields", "vegan", 
+          "heatmaply", "scales", "ggcorrplot", "landscapemetrics", "zenodor")
 
-pkgs <- c("tidyverse","here","cowplot","sf","RColorBrewer","ggpubr","raster","terra", "osmose", "ncdf4", "fields", "vegan", "heatmaply", "scales", "ggcorrplot", "landscapemetrics")
-nip <- pkgs[!(pkgs %in% installed.packages())]
-nip <- lapply(nip, install.packages, dependencies = TRUE)
-ip   <- unlist(lapply(pkgs, require, character.only = TRUE, quietly = TRUE))
+# Install CRAN packages (excluding special cases)
+cran_pkgs <- setdiff(pkgs, c("osmose", "zenodoR"))
+install_missing <- setdiff(cran_pkgs, rownames(installed.packages()))
+if (length(install_missing)) install.packages(install_missing, dependencies = TRUE)
 
-#-----------------Loading packages-------------------
+# Install 'osmose' from drat if needed
+if (!"osmose" %in% rownames(installed.packages())) {
+  install.packages("osmose", repos = "https://github.com/osmose-model/drat")
+}
 
-tbl_fread <- function(output.Folder, pattern){
-  files = list.files(output.Folder, pattern, full.names = TRUE) %>% 
-    map_df(~fread(.)) %>%
-    bind_rows()
+# Install 'zenodoR' from GitHub if needed
+if (!"zenodoR" %in% rownames(installed.packages())) {
+  if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+  remotes::install_github("frbcesab/zenodor")
+}
+
+# Load all packages
+invisible(lapply(pkgs, require, character.only = TRUE))
+```
+
+# check data folder is in the root directory of the repository
+```{r}
+# Define settings
+data_folder <- "data"
+repo_root <- here::here()
+data_path <- file.path(repo_root, data_folder)
+
+# If data folder is missing, use zenodor to download
+
+# Download if data folder doesn't exist
+if (!dir.exists(data_path)) {
+  message("Data folder not found. Attempting to download from Zenodo...")
+
+  # Download all files from the Zenodo record
+  wanted_folder <- zenodor::zen_list_files(record_id = "14039492")[1]
+  zenodor::zen_download_files(record_id = "14039492", path = repo_root, files = wanted_folder)
+  file_path <- file.path(repo_root, "content")
+
+  # Check again
+  if (dir.exists(data_path)) {
+    message("Data folder successfully downloaded.")
+    unzip(file_path, exdir = repo_root)
+
+  } else {
+    stop("Data folder still missing. Check the contents of the Zenodo archive.")
+  }
+} else {
+  message("Data folder already exists.")
 }
 
 ```
+
+
+```{r}
+# check_data_folder.R
+
+# Define the expected folder name and Zenodo download URL
+data_folder <- "data"
+zenodo_url <- "https://doi.org/10.5281/zenodo.14039492/data.zip"  # Replace with actual URL
+zip_file <- "data.zip"
+
+# Get the current working directory (assumed to be repo root)
+repo_root <- getwd()
+
+# Full path to data folder
+data_path <- file.path(repo_root, data_folder)
+
+# Check if the data folder exists
+if (!dir.exists(data_path)) {
+  message("Data folder not found in the root directory. Downloading from Zenodo...")
+
+  # Download the zip file
+  download.file(zenodo_url, destfile = zip_file, mode = "wb")
+  message("Download complete. Unzipping...")
+
+  # Unzip the file into the root directory
+  unzip(zip_file, exdir = repo_root)
+
+  # Clean up
+  file.remove(zip_file)
+
+  if (dir.exists(data_path)) {
+    message("Data folder successfully downloaded and extracted.")
+  } else {
+    stop("Download or extraction failed. Please check the Zenodo URL or archive structure.")
+  }
+} else {
+  message("Data folder already exists in the root directory.")
+}
+
+```
+
 
 #1.2. Loading osmose config files for fishing mortality and species names
 
@@ -161,6 +242,12 @@ load_multiple_csv <- function(folder_path) {
   file_list <- list.files(path = folder_path, pattern = "\\.csv$", full.names = TRUE)
   data_list <- lapply(file_list, read.csv, stringsAsFactors = FALSE)
   return(data_list)
+}
+
+tbl_fread <- function(output.Folder, pattern){
+  files = list.files(output.Folder, pattern, full.names = TRUE) %>% 
+    map_df(~fread(.)) %>%
+    bind_rows()
 }
 ```
 
