@@ -20,3 +20,10 @@ The code directory regroups functions used for:
 
 Scripts in this repository are also accessible on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16734084.svg)](https://doi.org/10.5281/zenodo.16734084)
 
+## Data sources
+* Synthetic Aperture Radar images from Sentinel-1 were downloaded from [Alaska Satellite Facility](https://search.asf.alaska.edu/#/)
+* Location of offshore platforms used to spatialize fishing effort were downloaded from [EMODnet](https://www.emodnet-humanactivities.eu) ((European Marine Observation and Data network)
+* Shapefiles of Mediterranean Geographical Sub-Areas (GSAs) were downloaded from the [GFCM-FAO](https://www.fao.org/gfcm/data/maps/gsas/es/)
+* Wordlbound shapefiles and EEZ boundaries were retrieved from [Marineregions](https://www.marineregions.org/downloads.php)
+
+Main contact: Clea Abello [clea.abello@gmail.com](mailto:clea.abello@gmail.com)
