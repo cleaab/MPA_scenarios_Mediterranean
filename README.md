@@ -7,8 +7,9 @@ Raw model outputs used for the analyis exceeded 30 Terabytes and could not be up
 
 To run all the analysis:
 1. Clone the git directory
-1. Download zenodo repository and get data folder. Place the data folder in the root directory of the repository.
-3. Open the .Rproj file in RStudioRun and run the main file Main.Rmd
+2. Open the .Rproj file in RStudioRun and run the main file Main.Rmd.
+3. If you are not able to download data directory automatically from Main.Rmd, download it manually from the zenodo repository [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492) and place it at the root of the repository.
+
 
 The code directory regroups functions used for:
 - creating the MPA scenarios (mpa_scenarios)
