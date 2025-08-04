@@ -25,5 +25,6 @@ Scripts in this repository are also accessible on Zenodo: [![DOI](https://zenodo
 * Location of offshore platforms used to spatialize fishing effort were downloaded from [EMODnet](https://www.emodnet-humanactivities.eu) ((European Marine Observation and Data network)
 * Shapefiles of Mediterranean Geographical Sub-Areas (GSAs) were downloaded from the [GFCM-FAO](https://www.fao.org/gfcm/data/maps/gsas/es/)
 * Wordlbound shapefiles and EEZ boundaries were retrieved from [Marineregions](https://www.marineregions.org/downloads.php)
-
+* Shapefiles of Marine Protected Areas in the Mediterranean Sea were downloaded from [MAPAMED]((https://www.mapamed.org/)) (MAPAMED, the database of MArine Protected Areas in the MEDiterranean. 2019 edition, version 2.)
+  
 Main contact: Clea Abello [clea.abello@gmail.com](mailto:clea.abello@gmail.com)
