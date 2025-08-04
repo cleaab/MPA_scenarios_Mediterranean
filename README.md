@@ -3,7 +3,7 @@ This repository contains data and code used to obtain results of the paper Abell
 
 Model code and configuration to run the MPA scenarios are accessible on zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492)
 
-Raw model outputs used for the analyis exceeded 30 Terabytes and could not be uploaded on Zenodo, but aggregated outputs used for the analysis and the scripts to generate them are available in the data folder on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492)
+Raw model outputs used for the analyis exceeded 30 Terabytes and could not be uploaded on Zenodo, but are available upon request. Aggregated outputs used for the analysis and the scripts to generate them are available in the data folder on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492)
 
 To run all the analysis:
 1. Clone the git directory
