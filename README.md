@@ -6,8 +6,8 @@ Model code and configuration to run the MPA scenarios are accessible on zenodo: 
 Raw model outputs used for the analyis exceeded 30 Terabytes and could not be uploaded on Zenodo, but aggregated outputs used for the analysis and the scripts to generate them are available in the data folder on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14039492.svg)](https://doi.org/10.5281/zenodo.14039492)
 
 To run all the analysis:
-1. Download zenodo repository and get data folder
-2. Clone the git directory
+1. Clone the git directory
+1. Download zenodo repository and get data folder. Place the data folder in the root directory of the repository.
 3. Open the .Rproj file in RStudioRun and run the main file Main.Rmd
 
 The code directory regroups functions used for:
