@@ -14,7 +14,7 @@ rm(list=ls())
 # List of required packages
 pkgs <- c("tidyverse", "here", "cowplot", "sf", "RColorBrewer", "ggpubr",
           "raster", "terra", "osmose", "ncdf4", "fields", "vegan", 
-          "heatmaply", "scales", "ggcorrplot", "landscapemetrics", "zenodor")
+          "heatmaply", "scales", "RColorBrewer", "ggcorrplot", "landscapemetrics", "zenodor")
 
 # Install CRAN packages (excluding special cases)
 cran_pkgs <- setdiff(pkgs, c("osmose", "zenodoR"))

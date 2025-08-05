@@ -17,7 +17,7 @@ library(ggplot2)
 library(sf)
 library(dplyr)
 library(viridis)
-
+library(RColorBrewer)
 
 # Read shapefile of GSA --------------------------------------------------------
 # For plots
@@ -83,8 +83,6 @@ MPA.scenarios.name <- c("Existing_network",
 mpa_step = 30
 
 # Uniform redistribution by GSA ----------------------------------------------
-scen = 1
-mpa_coverage = 10
 for (scen in 1:length(MPA.scenarios.name)){
   for (mpa_coverage in 1:mpa_step){
 
@@ -250,10 +248,6 @@ for (scen in 1:length(MPA.scenarios.name)){
     
   }
 }
-
-####END of checked script ------------------------------------------------------
-# ------------------------------------------------------------------------------
-
 
 
 ### Plot effort and fishing strategies  ----------------------------------------

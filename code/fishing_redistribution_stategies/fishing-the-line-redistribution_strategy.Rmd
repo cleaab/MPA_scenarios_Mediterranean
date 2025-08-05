@@ -11,6 +11,8 @@ library(tidyverse)
 library(terra)
 library(here)
 library(ggplot2)
+library(sf)
+library(RColorBrewer) 
 ```
 
 
@@ -286,7 +288,10 @@ MPA.scenarios.name <- c("Mazor_scenario_8",
 
 ```{r}
 for (scen in 1:length(MPA.scenarios.name)){
+  scen = 22
   for (mpa_coverage in 1:mpa_step){
+    mpa_coverage = 1
+    
     MPA = read_csv(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/csv_gpkg_files/", mpa_coverage, ".csv"), col_names =  FALSE)
     MPA_clusters = MPA_cluster(MPA)
     lst = merge_lists(MPA_clusters)
@@ -358,21 +363,11 @@ for (scen in 1:length(MPA.scenarios.name)){
       Med = data.frame(1:max_cell_id)
       colnames(Med) = "cell_id"
       rate_vect = c(as.matrix(rate))
-      Med$rate = rate_vect
       MPA_vect = c(as.matrix(MPA))
       Med$MPA = MPA_vect
       
-      Med$effort= Med$rate/sum(rate_vect) 
-      Med$effort_corrected = Med$effort  # total effort so that sum effort = 1 (used is OSMOSE) - revient au même car OSMOSE restandardize derrière même si GSA prop et GSA uniform sont différents
-      
-      Med$effort= Med$rate/mean(rate_vect) # total effort so that mean effort = 1 (for plot)
-      sum(Med$effort, na.rm = T)
-      mean(Med$effort, na.rm = T)
-      sum(Med$rate, na.rm = T)
-      mean(Med$rate, na.rm = T)
-      
-      Med$effort = Med$rate
-      Med$effort_corrected = Med$rate
+      Med$effort = rate_vect
+      Med$effort_corrected = rate_vect
       sum(Med$effort_corrected, na.rm = T)
       mean(Med$effort_corrected, na.rm = T)
 
@@ -429,9 +424,13 @@ for (scen in 1:length(MPA.scenarios.name)){
     writeRaster(MPA_cluster_nb_rast, paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/Number_of_MPA_clusters_", mpa_coverage, ".tif"), overwrite=TRUE)
 
     plot(MPA_cluster_nb_rast)
+    
+    Redistributed_effort_matrix = matrix(Med$effort_corrected, ncol=190, byrow=TRUE)
+    sum(Med$effort_corrected)
+    mean(Med$effort_corrected)
 
     # Write csv
-    write.table(Corrected_effort_matrix,
+    write.table(Redistributed_effort_matrix,
                     paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/after_redistribution/csv_gpkg_files/Corrected_effort_fishing_the_line_", mpa_coverage, ".csv"),
                     row.names = FALSE,
                     col.names=FALSE,
