@@ -286,9 +286,7 @@ MPA.scenarios.name <- c("Mazor_scenario_8",
 
 ```{r}
 for (scen in 1:length(MPA.scenarios.name)){
-  scen = 11
   for (mpa_coverage in 1:mpa_step){
-    mpa_coverage = 10
     MPA = read_csv(paste0(MPA_dir, "/", MPA.scenarios.name[scen], "/csv_gpkg_files/", mpa_coverage, ".csv"), col_names =  FALSE)
     MPA_clusters = MPA_cluster(MPA)
     lst = merge_lists(MPA_clusters)
