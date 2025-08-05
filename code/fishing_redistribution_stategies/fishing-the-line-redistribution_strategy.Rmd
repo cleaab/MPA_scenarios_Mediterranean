@@ -425,7 +425,7 @@ for (scen in 1:length(MPA.scenarios.name)){
 
     plot(MPA_cluster_nb_rast)
     
-    Redistributed_effort_matrix = matrix(Med$effort_corrected, ncol=190, byrow=TRUE)
+    Redistributed_effort_matrix = matrix(Med$effort_corrected, ncol=190, byrow=FALSE)
     sum(Med$effort_corrected)
     mean(Med$effort_corrected)
 
