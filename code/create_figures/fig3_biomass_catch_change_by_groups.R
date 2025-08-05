@@ -252,39 +252,41 @@ plot.fig3 <- function(biomass_by_groups, catch_by_groups, scen, f, save = TRUE){
 # other MPA scenarios and fishing redistribution strategies
   
 plot.fig.A6.other.scenarios.S1.S4.S5.S6 <- function(biomass_by_groups_data, catch_by_groups_data, scen, save = TRUE){
+  
+  biomass_plots_f <- list()
+  catch_plots_f <- list()
+  
+  for (f in 1:3){
+    # Biomass plots -------
+    biomass_scen = plot.biomass.change.by.groups(biomass_by_groups_data[[f]], scen, f)
     
-    for (f in 1:3){
-      # Biomass plots -------
-      
-      biomass_scen = plot.biomass.change.by.groups(biomass_by_groups_data[[f]], scen, f)
-      
-      biomass_scen_mod <- biomass_scen + theme(axis.title.x = element_blank(),
-                                               plot.margin = unit(c(5, 3, 0.5, 4), "pt"))
-      
-      # Catch plots -------
-      
-      catch_scen = plot.catch.change.by.groups(catch_by_groups_data[[f]], scen, f)
-      
-      catch_scen_mod <- catch_scen + theme(plot.title = element_blank(), plot.subtitle = element_blank(),
-                                           plot.margin = unit(c(0, 3, 0, 4), "pt"))
-      # Store in lists instead of using `c()`
-      biomass_plots_f[[f]] <- biomass_scen_mod
-      catch_plots_f[[f]] <- catch_scen_mod
-      
-    }
+    biomass_scen_mod <- biomass_scen + theme(axis.title.x = element_blank(),
+                                             plot.margin = unit(c(5, 3, 0.5, 4), "pt"))
     
-    # Arrange plots together
-    scen_plot <- ggarrange(plotlist = c(biomass_plots_f, catch_plots_f), 
-                            ncol = 3, 
-                            nrow = 2, 
-                            common.legend = T,
-                            legend = "bottom",
-                            align = "hv")
-    if (save == TRUE){
-      ggsave(here(paste0("figures/appendix/Fig_A6_total_biomass_catch_by_groups_", MPA_scenarios_name[scen], ".png")), dpi = 1000, height = 12, width = 12)
-    }
+    # Catch plots -------
+    
+    catch_scen = plot.catch.change.by.groups(catch_by_groups_data[[f]], scen, f)
+    
+    catch_scen_mod <- catch_scen + theme(plot.title = element_blank(), plot.subtitle = element_blank(),
+                                         plot.margin = unit(c(0, 3, 0, 4), "pt"))
+    # Store in lists instead of using `c()`
+    biomass_plots_f[[f]] <- biomass_scen_mod
+    catch_plots_f[[f]] <- catch_scen_mod
+    
   }
   
+  # Arrange plots together
+  scen_plot <- ggarrange(plotlist = c(biomass_plots_f, catch_plots_f), 
+                         ncol = 3, 
+                         nrow = 2, 
+                         common.legend = T,
+                         legend = "bottom",
+                         align = "hv")
+  if (save == TRUE){
+    ggsave(here(paste0("figures/appendix/Fig_A6_total_biomass_catch_by_groups_", MPA_scenarios_name[scen], ".png")), dpi = 1000, height = 12, width = 12)
+  }
+}
+
  ### random scenarios S2-basin
 
 plot.biomass.change.by.groups.S2 <- function(biomass_by_groups, f = 1){
@@ -396,6 +398,9 @@ plot.catch.change.by.groups.S2 <- function(catch_by_groups, f = 1){
 
 
 plot.fig.A6.other.scenarios.S2 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
+  
+  biomass_plots_f <- list()
+  catch_plots_f <- list()
   
   for (f in 1:3){
     # Biomass plots -------
@@ -540,6 +545,10 @@ plot.catch.change.by.groups.S3 <- function(catch_by_groups, f = 1){
 
 
 plot.fig.A6.other.scenarios.S3 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
+  
+  
+  biomass_plots_f <- list()
+  catch_plots_f <- list()
   
   for (f in 1:3){
     # Biomass plots -------
