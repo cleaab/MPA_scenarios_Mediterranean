@@ -11,13 +11,13 @@
 
 # Create community matrix Y
 
-calculate.relative.biomass.change.scenarios <- function(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline, coverage_level = 10){
+calculate.total.biomass.scenarios <- function(Biom_GSA_prop, coverage_level = 10){
   
 
-  Biom_scenarios = rbind(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline) %>%
-    dplyr::select(tot.biomass, mpa.coverage, scenario_rep, scenario, Fishing_scenario) %>%
+  Biom_scenarios = Biom_GSA_prop %>%
+    dplyr::select(tot.biomass, mpa.coverage, scenario_rep, scenario) %>%
     rename(mpa_coverage = mpa.coverage) %>%
-    group_by(mpa_coverage, scenario, Fishing_scenario) %>%
+    group_by(mpa_coverage, scenario) %>%
     summarise(mean_biom_mpa = mean(tot.biomass))
   
   Biomass_noMPA = Biom_scenarios$mean_biom_mpa[1]
@@ -31,14 +31,13 @@ calculate.relative.biomass.change.scenarios <- function(Biom_NoCC_GSA_prop, Biom
   return(Relative_biomass)
 }
 
-
-calculate.relative.catch.change.scenarios <- function(Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, coverage_level = 10){
+calculate.total.catch.scenarios <- function(Catch_GSA_prop, coverage_level = 10){
   
   
-  Catch_scenarios = rbind(Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline) %>%
-    dplyr::select(tot.catches, mpa.coverage, scenario_rep, scenario, Fishing_scenario) %>%
+  Catch_scenarios = Catch_GSA_prop %>%
+    dplyr::select(tot.catches, mpa.coverage, scenario_rep, scenario) %>%
     rename(mpa_coverage = mpa.coverage) %>%
-    group_by(mpa_coverage, scenario, Fishing_scenario) %>%
+    group_by(mpa_coverage, scenario) %>%
     summarise(mean_catch_mpa = mean(tot.catches))
   
   Catches_noMPA = Catch_scenarios$mean_catch_mpa[1]
@@ -52,87 +51,82 @@ calculate.relative.catch.change.scenarios <- function(Catch_NoCC_GSA_prop, Catch
   return(Relative_catches)
 }
 
-calculate.LFI.scenarios <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline, coverage_level = 10, inside_outside){
+calculate.LFI.scenarios <- function(LFI_GSA_prop, coverage_level = 10){
   
-  # inside_outside = "Inside MPAs" or "Outside MPAs" or "Entire Mediterranean Sea"
-  LFI_GSA_prop = LFI_GSA_prop %>%
-    filter(mpa == inside_outside) %>%
+  LFI = LFI_GSA_prop %>%
+    filter(mpa == "Entire Mediterranean Sea") %>%
+    group_by(mpa_coverage, scenario) %>%
+    summarise(LFI = mean(mean_LFI_60_years, na.rm = T)) %>%
     filter(mpa_coverage == coverage_level)  
-  
-  LFI_GSA_uniform = LFI_GSA_uniform %>%
-    filter(mpa == inside_outside) %>%
-    filter(mpa_coverage == coverage_level)  
-  
-  LFI_Fline = LFI_Fline %>%
-    filter(mpa == inside_outside) %>%
-    filter(mpa_coverage == coverage_level)
-  
-  LFI = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
-    group_by(mpa_coverage, scenario, Fishing_scenario) %>%
-    summarise(mean_LFI_reps = mean(mean_LFI_60_years))
-  
-  if (inside_outside == "Outside MPAs"){
-    LFI = LFI %>%
-      rename(mean_LFI_reps_outside = mean_LFI_reps)
-  }
+
   return(LFI)
 }
 
-
-calculate.diversity.scenarios <- function(diversity_output_lit, diversity_output_random_basin, diversity_output_random_EEZ, coverage_level = 10, inside_outside){
+calculate.diversity.scenarios <- function(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ, coverage_level = 10){
   
-  # inside_outside = "Inside MPAs" or "Outside MPAs"
-  Diversity = rbind(diversity_output_lit, diversity_output_random_basin, diversity_output_random_EEZ) %>%
-    filter(mpa_coverage == coverage_level) %>%
-    rename(scenario = mpa_scenario) 
+  Diversity = rbind(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ) %>%
+    ungroup() %>%
+    rename(scenario = mpa_scenario) %>%
+    group_by(scenario, mpa_coverage) %>%
+    summarise(diversity = mean(mean_exp_H, na.rm = T)) %>%
+    filter(mpa_coverage == coverage_level)
+    
   
   Diversity$scenario <- gsub("-rep", " ", Diversity$scenario)
-  
-  if (inside_outside == "Outside MPAs"){
-    Diversity = Diversity %>%
-      rename(mean_exp_H_outside = mean_exp_H_inside)
-  }
   
   return(Diversity)
 }
 
+calculate.evenness.scenarios <- function(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ, coverage_level = 10){
+  
+  Evenness = rbind(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ) %>%
+    ungroup() %>%
+    rename(scenario = mpa_scenario) %>%
+    group_by(scenario, mpa_coverage) %>%
+    summarise(evenness = mean(mean_evenness, na.rm = T)) %>%
+    filter(mpa_coverage == coverage_level)
+  
+  
+  Evenness$scenario <- gsub("-rep", " ", Evenness$scenario)
+  
+  return(Evenness)
+}
+
 create.response.var.matrix <- function(coverage_level = 10){
   
-  biomass = calculate.relative.biomass.change.scenarios(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline, coverage_level)
+  biomass = calculate.total.biomass.scenarios(Biom_GSA_prop, coverage_level)
   
-  catch = calculate.relative.catch.change.scenarios(Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, coverage_level)
+  catch = calculate.total.catch.scenarios(Catch_GSA_prop, coverage_level)
   
-  LFI_inside = calculate.LFI.scenarios(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline, coverage_level, inside_outside = "Inside MPAs")
+  LFI = calculate.LFI.scenarios(LFI_GSA_prop, coverage_level)
   
-  LFI_outside = calculate.LFI.scenarios(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline, coverage_level, inside_outside = "Outside MPAs")
+  diversity = calculate.diversity.scenarios(Mean_diversity_Med_GSA_prop_lit, 
+                                            Mean_diversity_Med_GSA_prop_random_basin, 
+                                            Mean_diversity_Med_GSA_prop_random_EEZ, 
+                                            coverage_level)
+  evenness = calculate.evenness.scenarios(Mean_diversity_Med_GSA_prop_lit, 
+                                          Mean_diversity_Med_GSA_prop_random_basin, 
+                                          Mean_diversity_Med_GSA_prop_random_EEZ, 
+                                          coverage_level)
   
-  diversity_inside = calculate.diversity.scenarios(diversity_output_lit = Mean_diversity_inside_GSA_prop_lit, 
-                                                   diversity_output_random_basin = Mean_diversity_inside_GSA_prop_random_basin, 
-                                                   diversity_output_random_EEZ = Mean_diversity_inside_GSA_prop_random_EEZ, 
-                                                   coverage_level, inside_outside = "Inside MPAs")
-  
-  diversity_outside = calculate.diversity.scenarios(diversity_output_lit = Mean_diversity_outside_GSA_prop_lit, 
-                                                    diversity_output_random_basin = Mean_diversity_outside_GSA_prop_random_basin, 
-                                                    diversity_output_random_EEZ = Mean_diversity_outside_GSA_prop_random_EEZ, 
-                                                    coverage_level, inside_outside = "Outside MPAs")
-  
+
   Response_var_matrix =  biomass %>%
-    left_join(catch, by = c("scenario", "Fishing_scenario", "mpa_coverage")) %>%
+    left_join(catch, by = c("scenario", "mpa_coverage")) %>%
     
-    left_join(LFI_inside, by = c("scenario", "Fishing_scenario", "mpa_coverage")) %>%
-    left_join(LFI_outside, by = c("scenario", "Fishing_scenario", "mpa_coverage")) %>%
+    left_join(LFI, by = c("scenario", "mpa_coverage")) %>%
+
+    left_join(diversity, c("scenario", "mpa_coverage")) %>%
+    left_join(evenness, c("scenario", "mpa_coverage")) %>%
     
-    left_join(diversity_inside, c("scenario", "mpa_coverage")) %>%
-    left_join(diversity_outside, c("scenario", "mpa_coverage")) %>%
-    
-    filter(Fishing_scenario == "Proportional by GSA") %>%
-    dplyr::select("scenario", "rel_biom_change", "rel_catch_change", "mean_LFI_reps", "mean_LFI_reps_outside", "mean_exp_H_inside", "mean_exp_H_outside") %>%
-    rename(LFI_inside = mean_LFI_reps, LFI_outside = mean_LFI_reps_outside, Diversity_inside = mean_exp_H_inside, Diversity_outside = mean_exp_H_outside) %>%
-  
+    #dplyr::select("scenario", "rel_biom_change", "rel_catch_change", "mean_LFI_reps", "mean_LFI_reps_outside", "mean_exp_H_inside", "mean_exp_H_outside") %>%
     ungroup() %>%
-    column_to_rownames(var="scenario") %>%
-    dplyr::select(-mpa_coverage) %>%
-    mutate(rel_catch_change = -(rel_catch_change))
+    
+    dplyr::select("scenario", "mean_biom_mpa", "mean_catch_mpa", "LFI", "diversity", "evenness") %>%
+    
+    rename(total_biomass = mean_biom_mpa, total_catch = mean_catch_mpa) %>%
+  
+    column_to_rownames(var="scenario") 
+    #mutate(rel_catch_change = -(rel_catch_change))
   
   # Scale and center variables
   Response_var_matrix <- decostand(Response_var_matrix, method = "standardize")
@@ -140,7 +134,45 @@ create.response.var.matrix <- function(coverage_level = 10){
   return(Response_var_matrix)
 }
 
-
+create.response.var.matrix.v2 <- function(coverage_level = 10){
+  
+  biomass = calculate.relative.biomass.change.scenarios(Biom_GSA_prop, coverage_level)
+  
+  catch = calculate.relative.catch.change.scenarios(Catch_GSA_prop, coverage_level)
+  
+  LFI = calculate.LFI.scenarios(LFI_GSA_prop, coverage_level)
+  
+  diversity = calculate.diversity.scenarios(Mean_diversity_Med_GSA_prop_lit, 
+                                            Mean_diversity_Med_GSA_prop_random_basin, 
+                                            Mean_diversity_Med_GSA_prop_random_EEZ, 
+                                            coverage_level)
+  evenness = calculate.evenness.scenarios(Mean_diversity_Med_GSA_prop_lit, 
+                                          Mean_diversity_Med_GSA_prop_random_basin, 
+                                          Mean_diversity_Med_GSA_prop_random_EEZ, 
+                                          coverage_level)
+  
+  
+  Response_var_matrix =  biomass %>%
+    left_join(catch, by = c("scenario", "mpa_coverage")) %>%
+    
+    left_join(LFI, by = c("scenario", "mpa_coverage")) %>%
+    
+    left_join(diversity, c("scenario", "mpa_coverage")) %>%
+    left_join(evenness, c("scenario", "mpa_coverage")) %>%
+    
+    ungroup() %>%
+    dplyr::select("scenario", "rel_biom_change", "rel_catch_change", "LFI", "diversity", "evenness") %>%
+    
+    rename(biomass_gains = rel_biom_change, catch_losses = rel_catch_change) %>%
+    
+    column_to_rownames(var="scenario") %>%
+    mutate(catch_losses = -(catch_losses))
+  
+  # Scale and center variables
+  Response_var_matrix <- decostand(Response_var_matrix, method = "standardize")
+  
+  return(Response_var_matrix)
+}
 
 create.explanatory.var.matrix <- function(Metrics_mpa_scenarios, Distance_to_coast){
   
@@ -205,17 +237,16 @@ compute.RDA <- function(){
   return(spe.rda)
 }
 
-
-plot.RDA <- function(scaling_type){
+plot.RDA <- function(scaling_type, rda1_range, rda2_range){
   
   # scaling_type = 1 or 2
   spe.rda = compute.RDA()
-  
+  plot(spe.rda)
   X_matrix = create.explanatory.var.matrix(Metrics_mpa_scenarios, Distance_to_coast)
   Y_matrix = create.response.var.matrix(coverage_level = 10)
   
   # Scaling 1 ----
-  png(here(paste0("figures/RDA_scaling_", scaling_type, ".png")), height = 12, width = 12, units = 'cm', res = 1000)
+  png(here(paste0("figures/RDA_scaling_", scaling_type, "_ed.png")), height = 12, width = 10, units = 'cm', res = 1000)
 
   X_matrix$scenario = as.factor(c("S5", "S6", "S4", "S1", rep("S2", 10), rep("S3", 10)))
   
@@ -229,15 +260,18 @@ plot.RDA <- function(scaling_type){
   ## Custom triplot, step by step
   
   # Set up a blank plot with scaling, axes, and labels
+  par(mar = c(4, 4, 0.5, 0.5))
+  
   plot(spe.rda,
-       scaling = scaling_type, # set scaling type 
-       type = "n", # this excludes the plotting of any points from the results
-       frame = FALSE,
-       # set axis limits
-       # label the plot (title, and axes)
-       #main = "Triplot RDA - scaling 2",
-       xlab = paste0("RDA1 (", perc[1], "%)"), 
-       ylab = paste0("RDA2 (", perc[2], "%)") 
+       scaling = scaling_type,
+       type    = "n", # this excludes the plotting of any points from the results
+       frame   = TRUE,
+       xlim    = rda1_range,
+       ylim    = rda2_range,
+       xlab    = paste0("RDA1 (", perc[1], "%)"),
+       ylab    = paste0("RDA2 (", perc[2], "%)"),
+       cex.lab  = 0.7,   # axis label size
+       cex.axis = 0.6    # tick label size
   )
   
   
@@ -266,9 +300,146 @@ plot.RDA <- function(scaling_type){
   # add points for site scores
   colvec <- c("gold", "gray60", "gray5", "darkorange", "darkslateblue", "darkorchid")
   with(X_matrix, points(spe.rda, display = "sites", col= colvec[scenario],
-                                   scaling = scaling_type, pch = 21, cex = 0.7, bg = colvec[scenario]))
-  
+                                   scaling = scaling_type, pch = 21, cex = 1, bg = colvec[scenario]))
+  # Legend for scenarios
+  legend("bottomright",
+         legend = levels(X_matrix$scenario),
+         pt.bg  = colvec[seq_along(levels(X_matrix$scenario))],
+         pch = 21, col = "black", pt.cex = 1,
+         bty = "n", cex = 0.65, title = "FPA scenario")
   
   dev.off()
 }
+
+
+
+# ============================================================
+# RDA heatmap: biomass × catch product surface to find best area along RDA axis of best compromise
+# ============================================================
+
+compute_heatmap <- function(spe.rda, scaling_type = 2, rda1_range, rda2_range, grid_res = 100) {
+  
+  # --- 1. Extract scores -----------------------------------------------
+  # Use "lc" (linear combination) scores for sites — these are the fitted
+  # coordinates in constrained space. "sites" includes residual noise.
+  sc_lc <- scores(spe.rda, display = "lc",      choices = c(1,2), scaling = scaling_type)
+  sc_sp <- scores(spe.rda, display = "species",  choices = c(1,2), scaling = scaling_type)
+  sc_bp <- scores(spe.rda, display = "bp",       choices = c(1,2), scaling = scaling_type)
+  
+  # --- 3. Species score vectors for biomass and catch ------------------
+  # sc_sp rows = your response variable names; adjust if named differently
+  b1 <- sc_sp["total_biomass", "RDA1"]
+  b2 <- sc_sp["total_biomass", "RDA2"]
+  c1 <- sc_sp["total_catch", "RDA1"]
+  c2 <- sc_sp["total_catch", "RDA2"]
+  
+  cat("Biomass equation: B̂ = ", 
+     round(b1,6), "* RDA1 +", round(b2,6), "* RDA2\n")
+  cat("Catch equation:   Ĉ = ", 
+      round(c1,6), "* RDA1 +", round(c2,6), "* RDA2\n")
+  
+  # --- 4. Define grid spanning the constrained ordination space ---------
+  #rda1_range <- range(sc_lc[, "RDA1"])
+  #rda2_range <- range(sc_lc[, "RDA2"])
+  #rda1_range <- range(-3,2)
+  #rda2_range <- range(-3,2)
+
+  
+  # Add 20% padding so site points don't sit on the edge
+  #pad <- function(r) r + c(-1,1) * diff(r) * 0.20
+  rda1_seq <- seq(rda1_range[1], rda1_range[2], length.out = grid_res)
+  rda2_seq <- seq(rda2_range[1], rda2_range[2], length.out = grid_res)
+  
+  grid <- expand.grid(RDA1 = rda1_seq, RDA2 = rda2_seq)
+  
+  # --- 5. Predict biomass and catch at every grid point ----------------
+  grid$biomass <- grid$RDA1 * b1 + grid$RDA2 * b2
+  grid$catch   <- grid$RDA1 * c1 + grid$RDA2 * c2
+  
+  # --- 6. Joint surface: product of biomass and (−catch) ---------------
+  # Normalize each to [0,1] first so they contribute equally
+  norm01 <- function(x) (x - min(x)) / (max(x) - min(x))
+  
+  grid$biomass_norm  <-  norm01(grid$biomass)
+  grid$catch_norm    <-  norm01(grid$catch)       # high = more catch loss
+  
+  grid$joint <- grid$biomass_norm * grid$catch_norm
+  
+  # --- 7. Return everything for plotting --------------------------------
+  list(grid = grid, sc_lc = sc_lc, sc_sp = sc_sp, sc_bp = sc_bp,
+       b = c(b1, b2), c = c(c1, c2))
+}
+
+# Show area along axis 1 and 2 of the RDA that offers the best compromise to maximise biomass gains and minimize catch losses
+
+plot_rda_heatmap <- function(spe.rda, variable = variable,
+                             scaling_type = 2, grid_res = 100,
+                             save_path = NULL) {
+  
+  res      <- compute_heatmap(spe.rda, scaling_type,rda1_range, rda2_range, grid_res)
+  grid     <- res$grid
+  sc_lc    <- res$sc_lc
+  sc_sp    <- res$sc_sp
+  sc_bp    <- res$sc_bp
+  
+  # Reshape to matrix for image/filled.contour
+  rda1_vals <- sort(unique(grid$RDA1))
+  rda2_vals <- sort(unique(grid$RDA2))
+  z_mat     <- matrix(grid[[variable]],
+                      nrow = length(rda1_vals),
+                      ncol = length(rda2_vals))
+  
+  # Color palettes
+  pal <- switch(variable,
+                joint   = colorRampPalette(c("#0d1b2a", "#1d4e89", "#f4a261", "#e9c46a"))(100),
+                biomass = colorRampPalette(c("#0d1b2a", "#1d4e89", "#f4a261", "#e9c46a"))(100),
+                catch = colorRampPalette(c("#0d1b2a", "#1d4e89", "#f4a261", "#e9c46a"))(100)
+  )
+  
+  title_str <- switch(variable,
+                      joint   = "Joint optimality: biomass × (1 − catch) [normalized]",
+                      total_biomass = "Predicted biomass in RDA space",
+                      total_catch   = "Predicted catch in RDA space"
+  )
+  
+  perc <- round(100 * summary(spe.rda)$cont$importance[2, 1:2], 2)
+  
+  if (!is.null(save_path)) {
+    png(save_path, height = 12, width = 12, units = "cm", res = 600)
+  }
+  
+  # Base heatmap
+  image(rda1_vals, rda2_vals, z_mat,
+        col  = pal,
+        xlab = paste0("RDA1 (", perc[1], "%)"),
+        ylab = paste0("RDA2 (", perc[2], "%)"),
+        main = title_str,
+        asp  = 1)
+  
+  # Zero axes
+  abline(h = 0, v = 0, col = "white", lty = 2, lwd = 0.8)
+  
+  # Site points (lc scores = constrained positions)
+  X_matrix <- create.explanatory.var.matrix(Metrics_mpa_scenarios, Distance_to_coast)
+  X_matrix$scenario <- as.factor(c("S5","S6","S4","S1", rep("S2",10), rep("S3",10)))
+  colvec <- c("gold","gray60","gray20","darkorange","darkslateblue","darkorchid")
+  
+  points(sc_lc[, "RDA1"], sc_lc[, "RDA2"],
+         pch = 21, cex = 1,
+         bg  = colvec[X_matrix$scenario],
+         col = "white", lwd = 0.6)
+  
+  # Legend for scenarios
+  legend("bottomright",
+         legend = levels(X_matrix$scenario),
+         pt.bg  = colvec[seq_along(levels(X_matrix$scenario))],
+         pch = 21, col = "white", pt.cex = 1,
+         bty = "n", cex = 0.65, title = "FPA scenario")
+  
+  if (!is.null(save_path)) dev.off()
+  
+  invisible(res)
+  
+}
+
 
