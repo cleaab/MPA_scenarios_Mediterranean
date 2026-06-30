@@ -8,7 +8,7 @@
 #' @export
 #' 
 
-plot.biomass.change.by.groups <- function(biomass_by_groups, scen = 1, f = 1){
+plot.biomass.change.by.groups <- function(biomass_by_groups, scen = 1, f = 2){
   
   # BIOMASS by groups ----------------------------------------------------------
   
@@ -43,6 +43,7 @@ plot.biomass.change.by.groups <- function(biomass_by_groups, scen = 1, f = 1){
     geom_bar(data = Tot_biom_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = biom_diff, fill = group), colour = "black", lwd = 0.1, stat="identity", alpha=0.8, width = 0.9, color = "gray60") +
     geom_line(data = Tot_biom_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = total_biom_diff), lwd = 0.5) +
     geom_line(data = Tot_biom_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = 0), colour = "gray5", lwd = 0.3, lty = "solid") +
+    geom_vline(xintercept = 10, lty = "dashed", colour = "gray40", lwd = 0.6) +
     
     theme_bw() +
     theme(axis.text=element_text(size=10), axis.title = element_text(size = 12)) +
@@ -54,14 +55,14 @@ plot.biomass.change.by.groups <- function(biomass_by_groups, scen = 1, f = 1){
     
     scale_fill_brewer(palette="BrBG", direction = -1) +
    
-    labs(title= paste0("MPA Scenario ", MPA_scenarios_name[scen]), subtitle= paste0(Fishing_scenario_name[f]),
-         x ="MPA coverage (%)", y = "Biomass difference (tons)") 
+    labs(title= paste0("FPA Scenario ", MPA_scenarios_name[scen]), subtitle= paste0(Fishing_scenario_name[f]),
+         x ="FPA coverage (%)", y = "Biomass difference (tons)") 
   # ylim(-150000, 510000) # for Mazor scenario 8
 
     return(biom_Mazor8_Med)
 }
 
-plot.catch.change.by.groups <- function(catch_by_groups, scen = 1, f = 1){
+plot.catch.change.by.groups <- function(catch_by_groups, scen = 1, f = 2){
   
   # CATCH by groups ------------------------------------------------------------
   
@@ -99,6 +100,7 @@ plot.catch.change.by.groups <- function(catch_by_groups, scen = 1, f = 1){
         geom_bar(data = Tot_catch_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = catch_diff, fill = group), colour = "black", lwd = 0.1, stat="identity", alpha=0.8, width = 0.9, color = "gray60") +
         geom_line(data = Tot_catch_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = total_catch_diff), lwd = 0.5) +
         geom_line(data = Tot_catch_bygroups_noCC_onescenario, aes(x = mpa.coverage, y = 0), colour = "gray5", lwd = 0.3, lty = "solid") +
+        geom_vline(xintercept = 10, lty = "dashed", colour = "gray40", lwd = 0.6) +
         
         theme_bw() +
         theme(axis.text=element_text(size=10), axis.title = element_text(size = 12)) +
@@ -109,20 +111,20 @@ plot.catch.change.by.groups <- function(catch_by_groups, scen = 1, f = 1){
               legend.text = element_text(size=10)) + #change legend text font size 
         scale_fill_brewer(palette="BrBG", direction = -1) +
         
-        labs(title= paste0("MPA Scenario ", MPA_scenarios_name[scen]), subtitle= paste0(Fishing_scenario_name[f]),
-             x ="MPA coverage (%)", y = "Catch difference (tons)") 
+        labs(title= paste0("FPA Scenario ", MPA_scenarios_name[scen]), subtitle= paste0(Fishing_scenario_name[f]),
+             x ="FPA coverage (%)", y = "Catch difference (tons)") 
       #ylim(-200500,82000) # for Mazor 8
   
       return(catch_Mazor8_Med)
 }
 
-plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f = 1){
+plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f = 2){
 
   # Without MPAs
   Biom_small_pelagics_beforeMPAs = biomass_by_groups %>%
     filter(mpa == "Inside MPAs")
   
-  # Lit scenarios
+# Lit scenarios
   Biom_small_pelagics_lit_current = biomass_by_groups %>%
     filter(mpa == "Inside MPAs") %>%
     filter(group == "Small-sized pelagic fish") %>%
@@ -198,7 +200,7 @@ plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f 
           legend.text = element_text(size=10)) +  #change legend text font size 
     scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
     scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    labs(x ="MPA coverage (%)", y = "Biomass change (%)", title = "Small pelagic fish", subtitle = "Inside reserves") +
+    labs(x ="FPA coverage (%)", y = "Biomass change (%)", title = "Small pelagic fish", subtitle = "Inside reserves") +
     theme(legend.position = "bottom") +
     theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 12), plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 10))
@@ -283,7 +285,7 @@ plot.fig.A6.other.scenarios.S1.S4.S5.S6 <- function(biomass_by_groups_data, catc
                          legend = "bottom",
                          align = "hv")
   if (save == TRUE){
-    ggsave(here(paste0("figures/appendix/Fig_A6_total_biomass_catch_by_groups_", MPA_scenarios_name[scen], ".png")), dpi = 1000, height = 12, width = 12)
+    ggsave(here(paste0("figures/appendix/Fig_A6_total_biomass_catch_by_groups_", MPA_scenarios_name[scen], "_ed.png")), dpi = 1000, height = 12, width = 12)
   }
 }
 
@@ -333,8 +335,8 @@ plot.biomass.change.by.groups.S2 <- function(biomass_by_groups, f = 1){
     
     scale_fill_brewer(palette="BrBG", direction = -1) +
     
-    labs(title= "MPA Scenario S2 - Random basin", subtitle= paste0(Fishing_scenario_name[f]),
-         x ="MPA coverage (%)", y = "Biomass difference (tons)") 
+    labs(title= "FPA Scenario S2 - Random basin", subtitle= paste0(Fishing_scenario_name[f]),
+         x ="FPA coverage (%)", y = "Biomass difference (tons)") 
   
   return(biom_S2_Med)
 
@@ -388,8 +390,8 @@ plot.catch.change.by.groups.S2 <- function(catch_by_groups, f = 1){
     
     scale_fill_brewer(palette="BrBG", direction = -1) +  
     
-    labs(title= "MPA Scenario S2 - Random basin", subtitle= paste0(Fishing_scenario_name[f]),
-         x ="MPA coverage (%)", y = "Catch difference (tons)") 
+    labs(title= "FPA Scenario S2 - Random basin", subtitle= paste0(Fishing_scenario_name[f]),
+         x ="FPA coverage (%)", y = "Catch difference (tons)") 
 
   return(catch_S2_Med)    
   
@@ -480,8 +482,8 @@ plot.biomass.change.by.groups.S3 <- function(biomass_by_groups, f = 1){
     
     scale_fill_brewer(palette="BrBG", direction = -1) +
     
-    labs(title= "MPA Scenario S3 - Random EEZ", subtitle= paste0(Fishing_scenario_name[f]),
-         x ="MPA coverage (%)", y = "Biomass difference (tons)") 
+    labs(title= "FPA Scenario S3 - Random EEZ", subtitle= paste0(Fishing_scenario_name[f]),
+         x ="FPA coverage (%)", y = "Biomass difference (tons)") 
   
   return(biom_S3_Med)
   
@@ -535,8 +537,8 @@ plot.catch.change.by.groups.S3 <- function(catch_by_groups, f = 1){
     
     scale_fill_brewer(palette="BrBG", direction = -1) +  
     
-    labs(title= "MPA Scenario S3 - Random EEZ", subtitle= paste0(Fishing_scenario_name[f]),
-         x ="MPA coverage (%)", y = "Catch difference (tons)") 
+    labs(title= "FPA Scenario S3 - Random EEZ", subtitle= paste0(Fishing_scenario_name[f]),
+         x ="FPA coverage (%)", y = "Catch difference (tons)") 
   
   return(catch_S3_Med)    
   
