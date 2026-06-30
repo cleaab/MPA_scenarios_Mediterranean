@@ -9,7 +9,7 @@
 #' 
 
 
-plot.fig.A5 <- function(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_coverage = 10, mpa.mask.dir, i = 1){
+plot.fig.suppmat.S5.4 <- function(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_coverage = 10, mpa.mask.dir, i = 1){
   
   # Without MPAs
   output.Dir.ref.noCC = here("data/spatial/")
