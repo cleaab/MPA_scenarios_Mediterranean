@@ -8,13 +8,14 @@
 #' @export
 #' 
 
-plot.LFI.inside.MPAs <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
+plot.LFI.Med <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
 
   LFI_all_fishing_scenarios_lit = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
     filter(scenario %in% c("Micheli", "Mazor scenario 8", "Mazor scenario 9", "Existing network")) %>%
     mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
     group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
-    summarise(mean_LFI_reps = mean(mean_LFI_60_years))
+    summarise(mean_LFI_reps = mean(mean_LFI_60_years),
+              sd_LFI_reps = sd(mean_LFI_60_years))
   
   LFI_all_fishing_scenarios_Random = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
     filter(grepl('Random', scenario)) %>%
@@ -39,15 +40,17 @@ plot.LFI.inside.MPAs <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
            low = min(mean_LFI_reps),
            mean = mean(mean_LFI_reps)) %>%
     mutate(scenario_group = "EEZ-conservation")  
-  ## Inside MPAs
+
+  
+  ## Entire Mediterranean
   LFI_all_fishing_scenarios_lit_inside = LFI_all_fishing_scenarios_lit %>%
-    filter(mpa == "Inside MPAs")
+    filter(mpa == "Entire Mediterranean Sea")
   
   LFI_all_fishing_scenarios_Random_inside = LFI_all_fishing_scenarios_Random %>%
-    filter(mpa == "Inside MPAs")
+    filter(mpa == "Entire Mediterranean Sea")
   
   LFI_all_fishing_scenarios_EEZ_inside = LFI_all_fishing_scenarios_EEZ %>%
-    filter(mpa == "Inside MPAs")
+    filter(mpa == "Entire Mediterranean Sea")
   
   
   ### PLOT
@@ -55,19 +58,19 @@ plot.LFI.inside.MPAs <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
   # Proportional by GSA
   # GSA prop
   LFI_all_fishing_scenarios_lit_inside_GSAprop = LFI_all_fishing_scenarios_lit %>%
-    filter(mpa == "Inside MPAs") %>%
+    filter(mpa == "Entire Mediterranean Sea") %>%
     filter(Fishing_scenario == "Proportional by GSA")
   
   LFI_all_fishing_scenarios_Random_inside_GSAprop = LFI_all_fishing_scenarios_Random %>%
-    filter(mpa == "Inside MPAs") %>%
+    filter(mpa == "Entire Mediterranean Sea") %>%
     filter(Fishing_scenario == "Proportional by GSA")
   
   
   LFI_all_fishing_scenarios_EEZ_inside_GSAprop = LFI_all_fishing_scenarios_EEZ %>%
-    filter(mpa == "Inside MPAs") %>%
+    filter(mpa == "Entire Mediterranean Sea") %>%
     filter(Fishing_scenario == "Proportional by GSA")
   
-  LFI_inside_GSAprop <- ggplot() +
+  LFI_Med_GSAprop <- ggplot() +
     
     geom_line(data = LFI_all_fishing_scenarios_Random_inside_GSAprop, aes(x = mpa_coverage, y = mean_LFI_reps, colour = scenario), lwd = 0.1, alpha=1) +
     geom_ribbon(data = LFI_all_fishing_scenarios_Random_inside_GSAprop, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
@@ -76,99 +79,9 @@ plot.LFI.inside.MPAs <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
     geom_ribbon(data = LFI_all_fishing_scenarios_EEZ_inside_GSAprop, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
     
     geom_line(data = LFI_all_fishing_scenarios_lit_inside_GSAprop, aes(x = mpa_coverage, y = mean_LFI_reps, colour = scenario), lwd = 0.8, alpha=1) +
+    #geom_ribbon(data = LFI_all_fishing_scenarios_lit_inside_GSAprop, aes(x = mpa_coverage, ymin = mean_LFI_reps - sd_LFI_reps, ymax = mean_LFI_reps + sd_LFI_reps, fill = scenario), alpha = 0.1) +
     
-    
-    #geom_line(data = Biom_EEZ_scenarios_noCC_GSAprop, aes(x = mpa.coverage, y = 0), colour = "gray5", lwd = 0.5, lty = "solid") +
-    
-    theme_bw() +
-    theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
-    theme(legend.key.size = unit(1, 'cm'), #change legend key size
-          legend.key.height = unit(1, 'cm'), #change legend key height
-          legend.key.width = unit(1, 'cm'), #change legend key width
-          legend.title = element_text(size=12), #change legend title font size
-          legend.text = element_text(size=10)) + #change legend text font size 
-    scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    labs(x ="MPA coverage (%)", y = "LFI (> 20 cm)", title = "Proportional by GSA") +
-    
-    theme(legend.position = "bottom") +
-    #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
-    ylim(0.278, 0.43)
-  
-  return(LFI_inside_GSAprop)
-  
-}
-
-plot.LFI.outside <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
-  
-  LFI_all_fishing_scenarios_lit = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
-    filter(scenario %in% c("Micheli", "Mazor scenario 8", "Mazor scenario 9", "Existing network")) %>%
-    mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
-    group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
-    summarise(mean_LFI_reps = mean(mean_LFI_60_years))
-  
-  LFI_all_fishing_scenarios_Random = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
-    filter(grepl('Random', scenario)) %>%
-    mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
-    group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
-    summarise(mean_LFI_reps = mean(mean_LFI_60_years)) %>%
-    ungroup() %>%
-    group_by(mpa_coverage, mpa, Fishing_scenario) %>%
-    mutate(high = max(mean_LFI_reps),
-           low = min(mean_LFI_reps),
-           mean = mean(mean_LFI_reps)) %>%
-    mutate(scenario_group = "Random")
-  
-  LFI_all_fishing_scenarios_EEZ = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
-    filter(grepl('EEZ', scenario)) %>%
-    mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
-    group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
-    summarise(mean_LFI_reps = mean(mean_LFI_60_years)) %>%
-    ungroup() %>%
-    group_by(mpa_coverage, mpa, Fishing_scenario) %>%
-    mutate(high = max(mean_LFI_reps),
-           low = min(mean_LFI_reps),
-           mean = mean(mean_LFI_reps)) %>%
-    mutate(scenario_group = "EEZ-conservation")
-
-  ## Outside MPAs
-  
-  LFI_all_fishing_scenarios_lit_outside = LFI_all_fishing_scenarios_lit %>%
-    filter(mpa == "Outside MPAs")
-  
-  LFI_all_fishing_scenarios_Random_outside = LFI_all_fishing_scenarios_Random %>%
-    filter(mpa == "Outside MPAs")
-  
-  LFI_all_fishing_scenarios_EEZ_outside = LFI_all_fishing_scenarios_EEZ %>%
-    filter(mpa == "Outside MPAs")
-  ## Outside
-  # GSA prop
-  LFI_all_fishing_scenarios_lit_outside_GSAprop = LFI_all_fishing_scenarios_lit %>%
-    filter(mpa == "Outside MPAs") %>%
-    filter(Fishing_scenario == "Proportional by GSA")
-  
-  LFI_all_fishing_scenarios_Random_outside_GSAprop = LFI_all_fishing_scenarios_Random %>%
-    filter(mpa == "Outside MPAs") %>%
-    filter(Fishing_scenario == "Proportional by GSA") 
-  
-  
-  LFI_all_fishing_scenarios_EEZ_outside_GSAprop = LFI_all_fishing_scenarios_EEZ %>%
-    filter(mpa == "Outside MPAs") %>%
-    filter(Fishing_scenario == "Proportional by GSA")
-  
-  LFI_outside_GSAprop <- ggplot() +
-    
-    geom_line(data = LFI_all_fishing_scenarios_Random_outside_GSAprop, aes(x = mpa_coverage, y = mean_LFI_reps, colour = scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = LFI_all_fishing_scenarios_Random_outside_GSAprop, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
-    
-    geom_line(data = LFI_all_fishing_scenarios_EEZ_outside_GSAprop, aes(x = mpa_coverage, y = mean_LFI_reps, colour = scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = LFI_all_fishing_scenarios_EEZ_outside_GSAprop, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
-    
-    geom_line(data = LFI_all_fishing_scenarios_lit_outside_GSAprop, aes(x = mpa_coverage, y = mean_LFI_reps, colour = scenario), lwd = 0.8, alpha=1) +
-    
-    
-    #geom_line(data = Biom_EEZ_scenarios_noCC_GSAprop, aes(x = mpa.coverage, y = 0), colour = "gray5", lwd = 0.5, lty = "solid") +
+    geom_vline(xintercept = 10, lty = "dashed", colour = "gray40", lwd = 0.6) +
     
     theme_bw() +
     theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
@@ -179,130 +92,168 @@ plot.LFI.outside <- function(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline){
           legend.text = element_text(size=10)) + #change legend text font size 
     scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
     scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    labs(x ="MPA coverage (%)", y = "Large Fish Indicator (> 20 cm)", title = "Proportional by GSA") +
+    labs(x ="FPA coverage (%)", y = "LFI (> 20 cm)", title = "Proportional by GSA") +
+    
     theme(legend.position = "bottom") +
     #theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
-    ylim(0.278, 0.43)
+    ylim(0.278, 0.4)
   
-  return(LFI_outside_GSAprop)
+  return(LFI_Med_GSAprop)
+  
 }
 
+# corrected exp H function - calculated on replicates and then averaged
 calculate.exp.H <- function(){
   # add 0%:
   # Abundance map before MPAs
   nc_abundance_spatial  = nc_open(here("data/spatial/Abundance_nompa_scenario.nc"))
   abundance_spatial  = ncvar_get(nc_abundance_spatial, "Abundance")
+  nc_close(nc_abundance_spatial)  # ← close immediately after reading
   
+  abundance_spatial_tot_sp = apply(abundance_spatial, c(1,2,4), sum, na.rm = T) # nombre tot d'individus
   
-  abundance_spatial_mean = apply(abundance_spatial, c(1,2,3), mean, na.rm = T)
-  abundance_spatial_mean_sp = apply(abundance_spatial, c(1,2), sum, na.rm = T) # nombre tot d'individus
+  # Shannon index: sum over all species of -(p * log(p))
+  # Initialize H_sum [190, 83, 30] with zeros
+  H_sum = array(0, dim = c(190, 83, 30))
   
   for (i in 1:101){
+    # Extract species i: [190, 83, 30], drop=FALSE not needed since dim 3 = 1 will auto-drop
+    sp_abundance = abundance_spatial[1:190, 1:83, i, 1:30]  # [190, 83, 30]
     
-    if (i == 1){
-      abundance_spatial_sp1 = abundance_spatial_mean[1:190,1:83,i]
-      p_sp1 = abundance_spatial_sp1/abundance_spatial_mean_sp
-      H_sp1 = -(p_sp1*log(p_sp1))
-      
-      abundance_spatial_sp2 = abundance_spatial_mean[1:190,1:83,i+1]
-      p_sp2 = abundance_spatial_sp2/abundance_spatial_mean_sp
-      H_sp2 = -(p_sp2*log(p_sp2))
-      
-      sum_matrix <- mapply(function(x, y) sum(c(x, y), na.rm = TRUE), H_sp2, H_sp1)
-      sum_matrix <- matrix(sum_matrix, nrow = nrow(H_sp2))
-    }
+    p_sp = sp_abundance / abundance_spatial_tot_sp           # [190, 83, 30]
     
-    else{
-      if (i == 2){
-        i = 3
-      }
-      abundance_spatial_sp1 = abundance_spatial_mean[1:190,1:83,i]
-      p_sp1 = abundance_spatial_sp1/abundance_spatial_mean_sp
-      H_sp1 = -(p_sp1*log(p_sp1))
-      sum_matrix <- mapply(function(x, y) sum(c(x, y), na.rm = TRUE), sum_matrix, H_sp1)
-      sum_matrix <- matrix(sum_matrix, nrow = nrow(H_sp1))
-      
-    }
+    # Suppress log(0): 0*log(0) = 0 by convention in Shannon
+    H_sp = ifelse(p_sp > 0, -(p_sp * log(p_sp)), 0)         # [190, 83, 30]
     
+    H_sum = H_sum + H_sp
   }
+      
+  # Set cells with no abundance to NA
+  H_sum[abundance_spatial_tot_sp == 0] = NA
   
-  sum_matrix[sum_matrix == 0] = NA
-  exp_H_spatial = exp(sum_matrix)
+  exp_H_spatial = exp(H_sum)
   
   return(exp_H_spatial)
 }
 
-plot.diversity.inside <- function(Mean_diversity_inside_GSA_prop_lit, Mean_diversity_inside_GSA_prop_random_basin, Mean_diversity_inside_GSA_prop_random_EEZ){
+calculate.evenness <- function(){
+  # add 0%:
+  # Abundance map before MPAs
+  nc_abundance_spatial  = nc_open(here("data/spatial/Abundance_nompa_scenario.nc"))
+  abundance_spatial  = ncvar_get(nc_abundance_spatial, "Abundance")
+  nc_close(nc_abundance_spatial)  # ← close immediately after reading
   
-  # calculate Hill-Shannon diversity index
-  exp_H_spatial = calculate.exp.H()
+  abundance_spatial_tot_sp = apply(abundance_spatial, c(1,2,4), sum, na.rm = T) # nombre tot d'individus
   
+  # Shannon index: sum over all species of -(p * log(p))
+  # Initialize H_sum [190, 83, 30] with zeros
+  H_sum = array(0, dim = c(190, 83, 30))
+  
+  for (i in 1:101){
+    # Extract species i: [190, 83, 30], drop=FALSE not needed since dim 3 = 1 will auto-drop
+    sp_abundance = abundance_spatial[1:190, 1:83, i, 1:30]  # [190, 83, 30]
+    
+    p_sp = sp_abundance / abundance_spatial_tot_sp           # [190, 83, 30]
+    
+    # Suppress log(0): 0*log(0) = 0 by convention in Shannon
+    H_sp = ifelse(p_sp > 0, -(p_sp * log(p_sp)), 0)         # [190, 83, 30]
+    
+    H_sum = H_sum + H_sp
+  }
+  
+  # Set cells with no abundance to NA
+  H_sum[abundance_spatial_tot_sp == 0] = NA
+  
+  exp_H_spatial = exp(H_sum)
+  
+  # Species richness
+  Hill0_spatial <- apply(abundance_spatial > 0, c(1,2, 4), sum, na.rm = TRUE)
+  
+  #evenness
+  evenness_spatial = H_sum/log(Hill0_spatial)
+  
+  return(evenness_spatial)
+}
 
-  mean_exp_H_spatial = rep(mean(exp_H_spatial, na.rm = T),4)
+plot.diversity.Med <- function(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ){
   
-  zero_pct_lit = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("Mazor scenario 8", "Mazor scenario 9", "Micheli", "Existing network"))
+  # calculate Hill-Shannon diversity index - before MPAs
+  exp_H_spatial = calculate.exp.H()
+  exp_H_noMPA = apply(exp_H_spatial, c(3), mean, na.rm = T)
+  length(exp_H_noMPA)
+
+  zero_pct = data.frame(exp_H_noMPA) %>%
+    rename(mean_exp_H = exp_H_noMPA) %>%
+    mutate(rep = seq_along(exp_H_noMPA)) %>%
+    mutate(mpa_coverage = 0)
+
+  # Lit scenarios
+  zero_pct_lit_ed <- bind_rows(replicate(4, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("Mazor scenario 8", "Mazor scenario 9", "Micheli", "Existing network"), each = nrow(zero_pct)))
   
-  Mean_diversity_inside_GSA_prop_lit_with_zero = rbind(Mean_diversity_inside_GSA_prop_lit, zero_pct_lit)
+  Mean_diversity_Med_GSA_prop_lit_ed = Mean_diversity_Med_GSA_prop_lit %>%
+    dplyr::select(mean_exp_H, rep, mpa_coverage, mpa_scenario)
   
-  Mean_diversity_inside_GSA_prop_random_basin = Mean_diversity_inside_GSA_prop_random_basin %>%
+  Mean_diversity_Med_GSA_prop_lit_with_zero = rbind(zero_pct_lit_ed, Mean_diversity_Med_GSA_prop_lit_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(exp_H_mean = mean(mean_exp_H, na.rm = T),
+              exp_H_sd = sd(mean_exp_H, na.rm = T))
+  
+  # Random - basin
+  zero_pct_random_ed <- bind_rows(replicate(10, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("Random-rep11", "Random-rep12", "Random-rep13", "Random-rep14", "Random-rep15", "Random-rep16", "Random-rep17", "Random-rep18", "Random-rep19", "Random-rep20"), each = nrow(zero_pct)))
+  
+  Mean_diversity_Med_GSA_prop_random_basin_ed = Mean_diversity_Med_GSA_prop_random_basin %>%
+    dplyr::select(mean_exp_H, rep, mpa_coverage, mpa_scenario)
+  
+  Mean_diversity_Med_GSA_prop_random_basin_with_zero = rbind(zero_pct_random_ed, Mean_diversity_Med_GSA_prop_random_basin_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(exp_H_mean = mean(mean_exp_H, na.rm = T),
+              exp_H_sd = sd(mean_exp_H, na.rm = T)) %>%
+    ungroup() %>%
     group_by(mpa_coverage) %>%
-    mutate(high = max(mean_exp_H_inside, na.rm = T),
-           low = min(mean_exp_H_inside, na.rm = T)) %>%
+    mutate(high = max(exp_H_mean, na.rm = T),
+           low = min(exp_H_mean, na.rm = T)) %>%
     ungroup() %>%
     mutate(scenario_group = "Random")
   
-  mean_exp_H_spatial = rep(mean(exp_H_spatial, na.rm = T),10)
+  Mean_diversity_Med_GSA_prop_random_basin_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_Med_GSA_prop_random_basin_with_zero$mpa_scenario)
   
-  zero_pct_random_basin = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("Random-rep11", "Random-rep12", "Random-rep13", "Random-rep14", "Random-rep15", "Random-rep16", "Random-rep17", "Random-rep18", "Random-rep19", "Random-rep20")) %>%
-    mutate(high = mean(exp_H_spatial, na.rm = T),
-           low = mean(exp_H_spatial, na.rm = T),
-           scenario_group = "Random")
+  # Random - EEZ
+  zero_pct_random_EEZ_ed <- bind_rows(replicate(10, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("EEZ-conservation-rep1", "EEZ-conservation-rep2", "EEZ-conservation-rep3", "EEZ-conservation-rep4", "EEZ-conservation-rep5", "EEZ-conservation-rep6", "EEZ-conservation-rep7", "EEZ-conservation-rep8", "EEZ-conservation-rep9", "EEZ-conservation-rep10"), each = nrow(zero_pct)))
   
+  Mean_diversity_Med_GSA_prop_random_EEZ_ed = Mean_diversity_Med_GSA_prop_random_EEZ %>%
+    dplyr::select(mean_exp_H, rep, mpa_coverage, mpa_scenario)
   
-  Mean_diversity_inside_GSA_prop_random_basin_with_zero = rbind(Mean_diversity_inside_GSA_prop_random_basin, zero_pct_random_basin)
-  Mean_diversity_inside_GSA_prop_random_basin_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_inside_GSA_prop_random_basin_with_zero$mpa_scenario)
-  
-  Mean_diversity_inside_GSA_prop_random_EEZ = Mean_diversity_inside_GSA_prop_random_EEZ %>%
+  Mean_diversity_Med_GSA_prop_random_EEZ_with_zero = rbind(zero_pct_random_EEZ_ed, Mean_diversity_Med_GSA_prop_random_EEZ_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(exp_H_mean = mean(mean_exp_H, na.rm = T),
+              exp_H_sd = sd(mean_exp_H, na.rm = T)) %>%
+    ungroup() %>%
     group_by(mpa_coverage) %>%
-    mutate(high = max(mean_exp_H_inside, na.rm = T),
-           low = min(mean_exp_H_inside, na.rm = T)) %>%
+    mutate(high = max(exp_H_mean, na.rm = T),
+           low = min(exp_H_mean, na.rm = T)) %>%
     ungroup() %>%
     mutate(scenario_group = "EEZ-conservation")
   
-  zero_pct_random_EEZ = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("EEZ-conservation-rep1", "EEZ-conservation-rep2", "EEZ-conservation-rep3", "EEZ-conservation-rep4", "EEZ-conservation-rep5", "EEZ-conservation-rep6", "EEZ-conservation-rep7", "EEZ-conservation-rep8", "EEZ-conservation-rep9", "EEZ-conservation-rep10")) %>%
-    mutate(high = mean(exp_H_spatial, na.rm = T),
-           low = mean(exp_H_spatial, na.rm = T),
-           scenario_group = "EEZ-conservation")
+  Mean_diversity_Med_GSA_prop_random_EEZ_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_Med_GSA_prop_random_EEZ_with_zero$mpa_scenario)
   
-  
-  Mean_diversity_inside_GSA_prop_random_EEZ_with_zero = rbind(Mean_diversity_inside_GSA_prop_random_EEZ, zero_pct_random_EEZ)
-  Mean_diversity_inside_GSA_prop_random_EEZ_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_inside_GSA_prop_random_EEZ_with_zero$mpa_scenario)
-  
-  
-  # Inside MPAs -------------------------------------------------------------
+  # Entire Med  -------------------------------------------------------------
   
   ### PLOT
-
   
-  Diversity_inside_after_MPAs_GSAprop <- ggplot() +
+  Diversity_Med_after_MPAs_GSAprop <- ggplot() +
     
-    geom_line(data = Mean_diversity_inside_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = Mean_diversity_inside_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
+    geom_line(data = Mean_diversity_Med_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, y = exp_H_mean, colour = mpa_scenario), lwd = 0.1, alpha=1) +
+    geom_ribbon(data = Mean_diversity_Med_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
     
-    geom_line(data = Mean_diversity_inside_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = Mean_diversity_inside_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
+    geom_line(data = Mean_diversity_Med_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, y = exp_H_mean, colour = mpa_scenario), lwd = 0.1, alpha=1) +
+    geom_ribbon(data = Mean_diversity_Med_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
     
-    geom_line(data = Mean_diversity_inside_GSA_prop_lit_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.8, alpha=1) +
+    geom_line(data = Mean_diversity_Med_GSA_prop_lit_with_zero, aes(x = mpa_coverage, y = exp_H_mean, colour = mpa_scenario), lwd = 0.8, alpha=1) +
+    geom_vline(xintercept = 10, lty = "dashed", colour = "gray40", lwd = 0.6) +
     
     theme_bw() +
     theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
@@ -313,80 +264,92 @@ plot.diversity.inside <- function(Mean_diversity_inside_GSA_prop_lit, Mean_diver
           legend.text = element_text(size=10)) + #change legend text font size 
     scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
     scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    labs(x ="MPA coverage (%)", y = "Taxonomic diversity", title = "Proportional by GSA") +
+    labs(x ="FPA coverage (%)", y = "Taxonomic diversity", title = "Proportional by GSA") +
     theme(legend.position = "bottom") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
   
-  return(Diversity_inside_after_MPAs_GSAprop)
+  return(Diversity_Med_after_MPAs_GSAprop)
 
 }
 
-plot.diversity.outside <- function(Mean_diversity_outside_GSA_prop_lit, Mean_diversity_outside_GSA_prop_random_basin, Mean_diversity_outside_GSA_prop_random_EEZ){
+plot.evenness.Med <- function(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ){
   
-  # calculate Hill-Shannon diversity index
-  exp_H_spatial = calculate.exp.H()
+  # calculate evenness - before MPAs
+  evenness_spatial = calculate.evenness()
+  evenness_noMPA = apply(evenness_spatial, c(3), mean, na.rm = T)
+  length(evenness_noMPA)
   
+  zero_pct = data.frame(evenness_noMPA) %>%
+    rename(mean_evenness = evenness_noMPA) %>%
+    mutate(rep = seq_along(evenness_noMPA)) %>%
+    mutate(mpa_coverage = 0)
   
-  mean_exp_H_spatial = rep(mean(exp_H_spatial, na.rm = T),4)
+  # Lit scenarios
+  zero_pct_lit_ed <- bind_rows(replicate(4, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("Mazor scenario 8", "Mazor scenario 9", "Micheli", "Existing network"), each = nrow(zero_pct)))
   
-  zero_pct_lit = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("Mazor scenario 8", "Mazor scenario 9", "Micheli", "Existing network"))
+  Mean_evenness_Med_GSA_prop_lit_ed = Mean_diversity_Med_GSA_prop_lit %>%
+    dplyr::select(mean_evenness, rep, mpa_coverage, mpa_scenario)
   
-
-  mean_exp_H_spatial = rep(mean(exp_H_spatial, na.rm = T),10)
+  Mean_evenness_Med_GSA_prop_lit_with_zero = rbind(zero_pct_lit_ed, Mean_evenness_Med_GSA_prop_lit_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(evenness_mean = mean(mean_evenness, na.rm = T),
+              evenness_sd = sd(mean_evenness, na.rm = T))
   
-  zero_pct_random_basin = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("Random-rep11", "Random-rep12", "Random-rep13", "Random-rep14", "Random-rep15", "Random-rep16", "Random-rep17", "Random-rep18", "Random-rep19", "Random-rep20")) %>%
-    mutate(high = mean(exp_H_spatial, na.rm = T),
-           low = mean(exp_H_spatial, na.rm = T),
-           scenario_group = "Random")
+  # Random - basin
+  zero_pct_random_ed <- bind_rows(replicate(10, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("Random-rep11", "Random-rep12", "Random-rep13", "Random-rep14", "Random-rep15", "Random-rep16", "Random-rep17", "Random-rep18", "Random-rep19", "Random-rep20"), each = nrow(zero_pct)))
   
-  zero_pct_random_EEZ = data.frame(mean_exp_H_spatial) %>%
-    rename(mean_exp_H_inside = mean_exp_H_spatial) %>%
-    mutate(mpa_coverage = 0) %>%
-    mutate(mpa_scenario = c("EEZ-conservation-rep1", "EEZ-conservation-rep2", "EEZ-conservation-rep3", "EEZ-conservation-rep4", "EEZ-conservation-rep5", "EEZ-conservation-rep6", "EEZ-conservation-rep7", "EEZ-conservation-rep8", "EEZ-conservation-rep9", "EEZ-conservation-rep10")) %>%
-    mutate(high = mean(exp_H_spatial, na.rm = T),
-           low = mean(exp_H_spatial, na.rm = T),
-           scenario_group = "EEZ-conservation")
+  Mean_evenness_Med_GSA_prop_random_basin_ed = Mean_diversity_Med_GSA_prop_random_basin %>%
+    dplyr::select(mean_evenness, rep, mpa_coverage, mpa_scenario)
   
-  # Outside ----- 
-
-  Mean_diversity_outside_GSA_prop_lit_with_zero = rbind(Mean_diversity_outside_GSA_prop_lit, zero_pct_lit)
-  
-  Mean_diversity_outside_GSA_prop_random_basin = Mean_diversity_outside_GSA_prop_random_basin %>%
+  Mean_evenness_Med_GSA_prop_random_basin_with_zero = rbind(zero_pct_random_ed, Mean_evenness_Med_GSA_prop_random_basin_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(evenness_mean = mean(mean_evenness, na.rm = T),
+              evenness_sd = sd(mean_evenness, na.rm = T)) %>%
+    ungroup() %>%
     group_by(mpa_coverage) %>%
-    mutate(high = max(mean_exp_H_inside, na.rm = T),
-           low = min(mean_exp_H_inside, na.rm = T)) %>%
+    mutate(high = max(evenness_mean, na.rm = T),
+           low = min(evenness_mean, na.rm = T)) %>%
     ungroup() %>%
     mutate(scenario_group = "Random")
   
-  Mean_diversity_outside_GSA_prop_random_basin_with_zero = rbind(Mean_diversity_outside_GSA_prop_random_basin, zero_pct_random_basin)
-  Mean_diversity_outside_GSA_prop_random_basin_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_outside_GSA_prop_random_basin_with_zero$mpa_scenario)
+  Mean_evenness_Med_GSA_prop_random_basin_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_evenness_Med_GSA_prop_random_basin_with_zero$mpa_scenario)
   
-  Mean_diversity_outside_GSA_prop_random_EEZ = Mean_diversity_outside_GSA_prop_random_EEZ %>%
+  # Random - EEZ
+  zero_pct_random_EEZ_ed <- bind_rows(replicate(10, zero_pct, simplify = FALSE)) %>%
+    mutate(mpa_scenario = rep(c("EEZ-conservation-rep1", "EEZ-conservation-rep2", "EEZ-conservation-rep3", "EEZ-conservation-rep4", "EEZ-conservation-rep5", "EEZ-conservation-rep6", "EEZ-conservation-rep7", "EEZ-conservation-rep8", "EEZ-conservation-rep9", "EEZ-conservation-rep10"), each = nrow(zero_pct)))
+  
+  Mean_evenness_Med_GSA_prop_random_EEZ_ed = Mean_diversity_Med_GSA_prop_random_EEZ %>%
+    dplyr::select(mean_evenness, rep, mpa_coverage, mpa_scenario)
+  
+  Mean_evenness_Med_GSA_prop_random_EEZ_with_zero = rbind(zero_pct_random_EEZ_ed, Mean_evenness_Med_GSA_prop_random_EEZ_ed) %>%
+    group_by(mpa_coverage, mpa_scenario) %>%
+    summarize(evenness_mean = mean(mean_evenness, na.rm = T),
+              evenness_sd = sd(mean_evenness, na.rm = T)) %>%
+    ungroup() %>%
     group_by(mpa_coverage) %>%
-    mutate(high = max(mean_exp_H_inside, na.rm = T),
-           low = min(mean_exp_H_inside, na.rm = T)) %>%
+    mutate(high = max(evenness_mean, na.rm = T),
+           low = min(evenness_mean, na.rm = T)) %>%
     ungroup() %>%
     mutate(scenario_group = "EEZ-conservation")
   
-  Mean_diversity_outside_GSA_prop_random_EEZ_with_zero = rbind(Mean_diversity_outside_GSA_prop_random_EEZ, zero_pct_random_EEZ)
-  Mean_diversity_outside_GSA_prop_random_EEZ_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_diversity_outside_GSA_prop_random_EEZ_with_zero$mpa_scenario)
+  Mean_evenness_Med_GSA_prop_random_EEZ_with_zero$mpa_scenario <- gsub("-rep", " ", Mean_evenness_Med_GSA_prop_random_EEZ_with_zero$mpa_scenario)
   
-  Diversity_outside_after_MPAs_GSAprop <- ggplot() +
-    
-    geom_line(data = Mean_diversity_outside_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = Mean_diversity_outside_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
-    
-    geom_line(data = Mean_diversity_outside_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.1, alpha=1) +
-    geom_ribbon(data = Mean_diversity_outside_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
-    
-    geom_line(data = Mean_diversity_outside_GSA_prop_lit_with_zero, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario), lwd = 0.8, alpha=1) +
+  # Entire Med  -------------------------------------------------------------
   
+  ### PLOT
+  
+  Evenness_Med_after_MPAs_GSAprop <- ggplot() +
+    
+    geom_line(data = Mean_evenness_Med_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, y = evenness_mean, colour = mpa_scenario), lwd = 0.1, alpha=1) +
+    geom_ribbon(data = Mean_evenness_Med_GSA_prop_random_basin_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
+    
+    geom_line(data = Mean_evenness_Med_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, y = evenness_mean, colour = mpa_scenario), lwd = 0.1, alpha=1) +
+    geom_ribbon(data = Mean_evenness_Med_GSA_prop_random_EEZ_with_zero, aes(x = mpa_coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
+    
+    geom_line(data = Mean_evenness_Med_GSA_prop_lit_with_zero, aes(x = mpa_coverage, y = evenness_mean, colour = mpa_scenario), lwd = 0.8, alpha=1) +
+    geom_vline(xintercept = 10, lty = "dashed", colour = "gray40", lwd = 0.6) +
     
     theme_bw() +
     theme(axis.text=element_text(size=12), axis.title = element_text(size = 14)) +
@@ -397,83 +360,68 @@ plot.diversity.outside <- function(Mean_diversity_outside_GSA_prop_lit, Mean_div
           legend.text = element_text(size=10)) + #change legend text font size 
     scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
     scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    
-    labs(x ="MPA coverage (%)", y = "Taxonomic diversity", title = "Proportional by GSA") +
+    labs(x ="FPA coverage (%)", y = "Evenness", title = "Proportional by GSA") +
     theme(legend.position = "bottom") +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) +
-    ylim(1.137, 1.163)
+    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
   
-  return(Diversity_outside_after_MPAs_GSAprop)
+  return(Evenness_Med_after_MPAs_GSAprop)
+  
 }
 
 plot.fig4 <- function(height_value, width_value, save){
-  ## Fig 4A - LFI -------------------------------
   
-  LFI_inside_GSAprop = plot.LFI.inside.MPAs(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline)
+  ## LFI ---------------------------------
   
-  LFI_inside_mod <- LFI_inside_GSAprop + theme(axis.title.x = element_blank(),
-                                               plot.title = element_blank(),
-                                               legend.position = "none",
-                                               plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
-    labs(subtitle = "Inside MPAs") +
-    theme(plot.margin = margin(0,0,0,0.5, "cm")) # 2 -right, 4 - left
-  
-  LFI_outside_GSAprop = plot.LFI.outside(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline)
-  
-  LFI_outside_mod <- LFI_outside_GSAprop + theme(axis.title.y = element_blank(),
-                                                 #axis.ticks.x = element_blank(),
-                                                 axis.title.x = element_blank(),
-                                                 plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic"),
-                                                 legend.position = "none",
-                                                 plot.title = element_blank()) +
-    labs(subtitle = "Outside MPAs") +
-    theme(plot.margin = margin(0,0.5,0,0, "cm")) # 2 -right, 4 - left
+  LFI_Med_GSAprop = plot.LFI.Med(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline)
+
+  LFI_Med_GSAprop_mod <- LFI_Med_GSAprop + theme(
+    
+    legend.text = element_text(size=14),
+    legend.title = element_blank(),
+    plot.title = element_blank(),
+    plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
+    theme(plot.margin = margin(0,0,0.5,0.5, "cm")) # 2 -right, 4 - left
   
   
+  ## Diversity ---------------------------------
   
-  fig4A <- ggarrange(LFI_inside_mod, LFI_outside_mod,
-                     ncol=2,
-                     nrow=1,
-                     align = "v")  
+  Diversity_Med_GSAprop = plot.diversity.Med(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ)
   
-  ## Fig 4B ---------------------------------
-  
-  Diversity_inside_after_MPAs_GSAprop = plot.diversity.inside(Mean_diversity_inside_GSA_prop_lit, Mean_diversity_inside_GSA_prop_random_basin, Mean_diversity_inside_GSA_prop_random_EEZ)
-  
-  Diversity_inside_mod <- Diversity_inside_after_MPAs_GSAprop + theme(
+  Diversity_Med_GSAprop_mod <- Diversity_Med_GSAprop + theme(
 
     legend.text = element_text(size=14),
     legend.title = element_blank(),
     plot.title = element_blank(),
     plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
-    labs(subtitle = "Inside MPAs") +
     theme(plot.margin = margin(0,0,0.5,0.5, "cm")) # 2 -right, 4 - left
   
-  Diversity_outside_after_MPAs_GSAprop = plot.diversity.outside(Mean_diversity_outside_GSA_prop_lit, Mean_diversity_outside_GSA_prop_random_basin, Mean_diversity_outside_GSA_prop_random_EEZ)
+  ## Evenness ---------------------------------
   
-  Diversity_outside_mod <- Diversity_outside_after_MPAs_GSAprop + theme(axis.title.y = element_blank(),
-                                                                        legend.title = element_blank(),
-                                                                        legend.text = element_text(size=14),
-                                                                        plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic"),
-                                                                        plot.title = element_blank()) +
-    labs(subtitle = "Outside MPAs") +
-    theme(plot.margin = margin(0,0.5,0.5,0, "cm")) # 2 -right, 4 - left
+  Evenness_Med_GSAprop = plot.evenness.Med(Mean_diversity_Med_GSA_prop_lit, Mean_diversity_Med_GSA_prop_random_basin, Mean_diversity_Med_GSA_prop_random_EEZ)
   
+  Evenness_Med_GSAprop_mod <- Evenness_Med_GSAprop + theme(
+    
+    legend.text = element_text(size=14),
+    legend.title = element_blank(),
+    plot.title = element_blank(),
+    plot.subtitle = element_text(vjust = -8, hjust = 0.9, size = 12, face = "italic")) + 
+    theme(plot.margin = margin(0,0,0.5,0.5, "cm")) # 2 -right, 4 - left
   
 
-  fig4B <- ggarrange(Diversity_inside_mod, Diversity_outside_mod,
-                     ncol=2,
+  fig4 <- ggarrange(LFI_Med_GSAprop_mod, Diversity_Med_GSAprop_mod, Evenness_Med_GSAprop_mod,
+                     ncol=3,
                      nrow=1,
                      common.legend = T,
                      legend = "bottom",
-                     align = "v") 
-  
-  fig4 <- plot_grid(fig4A, fig4B, ncol = 1, nrow = 2, rel_heights = c(0.85, 1), labels = c("A", "B"), label_size = 20)
+                     align = "v",
+                    labels = c("A", "B", "C"),      # ← add this
+                    font.label = list(size = 14, face = "bold"))  # ← optional styling
   
   
   
   if (save == TRUE){
-    ggsave(here("figures/Fig_4_LFI_diversity.png"), dpi = 1000, height = height_value, width = width_value)
+    ggsave(here("figures/Fig_4_LFI_diversity_evenness_Med_with_sd.png"), dpi = 1000, height = 6, width = 10)
   }
 }
+
 
