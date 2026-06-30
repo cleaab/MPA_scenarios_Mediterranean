@@ -47,6 +47,7 @@ plot(MPA_union)
 
 #st_write(MPA_union, "Conservation_plans_masks_qgislayers/Existing_network/Baseline_MPA_network_union.shp") # used in QGIS for overlap
 #st_write(MPA, "Conservation_plans_masks_qgislayers/Existing_network/Baseline_MPA_network.shp")
+st_write(MPA, here("sandbox/Baseline_MPA_network_MAPAMED.shp"))
 
 # Plot
 fig.A4.2.current.network <- ggplot() +
