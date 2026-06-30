@@ -253,7 +253,7 @@ plot.fig3 <- function(biomass_by_groups, catch_by_groups, scen, f, save = TRUE){
 
 # other MPA scenarios and fishing redistribution strategies
   
-plot.fig.A6.other.scenarios.S1.S4.S5.S6 <- function(biomass_by_groups_data, catch_by_groups_data, scen, save = TRUE){
+plot.fig.supplementary.S6.other.scenarios.S1.S4.S5.S6 <- function(biomass_by_groups_data, catch_by_groups_data, scen, save = TRUE){
   
   biomass_plots_f <- list()
   catch_plots_f <- list()
@@ -399,7 +399,7 @@ plot.catch.change.by.groups.S2 <- function(catch_by_groups, f = 1){
 }
 
 
-plot.fig.A6.other.scenarios.S2 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
+plot.fig.supplementary.S6.other.scenarios.S2 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
   
   biomass_plots_f <- list()
   catch_plots_f <- list()
@@ -546,7 +546,7 @@ plot.catch.change.by.groups.S3 <- function(catch_by_groups, f = 1){
 }
 
 
-plot.fig.A6.other.scenarios.S3 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
+plot.fig.supplementary.S6.other.scenarios.S3 <- function(biomass_by_groups_data, catch_by_groups_data, save = TRUE){
   
   
   biomass_plots_f <- list()
