@@ -221,31 +221,31 @@ area = "Entire Mediterranean Sea"
 # load data
 biomass_data <- load_multiple_csv(here("data/total_biomass"))
 
-Biom_NoCC_fline <- biomass_data[[1]] %>%
+Biom_fline <- biomass_data[[1]] %>%
   mutate(Fishing_scenario = "Fishing-the-line") %>%
   filter(mpa == area)
 
-Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
+Biom_GSA_prop <- biomass_data[[2]] %>%
   mutate(Fishing_scenario = "Proportional by GSA") %>%
-  filter(mpa == area)
+  filter(mpa == area) 
 
-Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
+Biom_GSA_uniform <- biomass_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") %>%
-  filter(mpa == area)
+  filter(mpa == area) 
 
 
 catch_data <- load_multiple_csv(here("data/total_catch"))
 
 
-Catch_NoCC_fline <- catch_data[[1]] %>%
+Catch_fline <- catch_data[[1]] %>%
   mutate(Fishing_scenario = "Fishing-the-line") %>%
-  filter(mpa == area)
+  filter(mpa == area) 
 
-Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
+Catch_GSA_prop <- catch_data[[2]] %>%
   mutate(Fishing_scenario = "Proportional by GSA") %>%
   filter(mpa == area)
 
-Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
+Catch_GSA_uniform <- catch_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") %>%
   filter(mpa == area)
 
@@ -257,11 +257,11 @@ group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "
 
 legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM", "S3-Random EEZ", "S6-Mazor SAUP")
 
-plot.biomass.catch.change.Med(Biom_NoCC_GSA_prop, Biom_NoCC_GSA_uniform, Biom_NoCC_fline, Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, save = TRUE)
+plot.biomass.catch.change.Med(Biom_GSA_prop, Biom_GSA_uniform, Biom_fline, Catch_GSA_prop, Catch_GSA_uniform, Catch_fline, save = TRUE)
 
 
 # Wilcoxon statistical test - difference between S1 and S2-S3 at 10% coverage
-Statistical.difference.scenarios(Catch_NoCC_GSA_prop, Catch_NoCC_GSA_uniform, Catch_NoCC_fline, coverage_level = 10)
+Statistical.difference.scenarios(Catch_GSA_prop, Catch_GSA_uniform, Catch_fline, coverage_level = 10)
 
 ```
 
@@ -273,15 +273,15 @@ area = "Entire Mediterranean Sea"
 # load data
 biomass_data <- load_multiple_csv(here("data/total_biomass"))
 
-Biom_NoCC_fline <- biomass_data[[1]] %>%
+Biom_fline <- biomass_data[[1]] %>%
   mutate(Fishing_scenario = "Fishing-the-line") %>%
   filter(mpa == area)
 
-Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
+Biom_GSA_prop <- biomass_data[[2]] %>%
   mutate(Fishing_scenario = "Proportional by GSA") %>%
   filter(mpa == area)
 
-Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
+Biom_GSA_uniform <- biomass_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") %>%
   filter(mpa == area)
 
@@ -289,15 +289,15 @@ Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
 catch_data <- load_multiple_csv(here("data/total_catch"))
 
 
-Catch_NoCC_fline <- catch_data[[1]] %>%
+Catch_fline <- catch_data[[1]] %>%
   mutate(Fishing_scenario = "Fishing-the-line") %>%
   filter(mpa == area)
 
-Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
+Catch_GSA_prop <- catch_data[[2]] %>%
   mutate(Fishing_scenario = "Proportional by GSA") %>%
   filter(mpa == area)
 
-Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
+Catch_GSA_uniform <- catch_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") %>%
   filter(mpa == area)
 
@@ -347,8 +347,104 @@ plot.fig.A6.other.scenarios.S3(biomass_by_groups_data, catch_by_groups_data, sav
 
 ```
 
+Compute SD variability for relative biomass and catch changes by group for main text - FPA scenario S5 and fishing redistribution GSA prop at 10% coverage
+```{r}
+
+biomass_by_groups_sd = biomass_by_groups %>%
+  # Combine large and medium pelagic/demersal into new groups
+  mutate(group = case_when(
+    group %in% c("Large-sized pelagic fish", "Medium-sized pelagic fish") ~ "Large & medium pelagic fish",
+    group %in% c("Large-sized demersal fish", "Medium-sized demersal fish") ~ "Large & medium demersal fish",
+    TRUE ~ group
+  )) %>%
+  # Sum biomass within the new combined groups before calculating rel change
+  group_by(scenario, group, mpa.coverage, mpa, scenario_rep) %>%
+  summarize(
+    tot.biomass     = sum(tot.biomass,     na.rm = T),
+    tot.biomass.ref = sum(tot.biomass.ref, na.rm = T),
+    .groups = "drop"
+  ) %>%
+  # Now calculate relative change per rep
+  mutate(rel_change = (tot.biomass - tot.biomass.ref) / tot.biomass.ref * 100) %>%
+  # Then summarize across reps
+  group_by(scenario, group, mpa.coverage, mpa) %>%
+  summarize(
+    rel_change_mean = mean(rel_change, na.rm = T),
+    rel_change_sd   = sd(rel_change,   na.rm = T),
+    .groups = "drop"
+  ) %>%
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario == "Mazor scenario 8")
+
+
+
+catches_by_groups_sd = catch_by_groups %>%
+  # Combine large and medium pelagic/demersal into new groups
+  mutate(group = case_when(
+    group %in% c("Large-sized pelagic fish", "Medium-sized pelagic fish") ~ "Large & medium pelagic fish",
+    group %in% c("Large-sized demersal fish", "Medium-sized demersal fish") ~ "Large & medium demersal fish",
+    TRUE ~ group
+  )) %>%
+  # Sum catch within the new combined groups before calculating rel change
+  group_by(scenario, group, mpa.coverage, mpa, scenario_rep) %>%
+  summarize(
+    tot.catches     = sum(tot.catches,     na.rm = T),
+    tot.catches.ref = sum(tot.catches.ref, na.rm = T),
+    .groups = "drop"
+  ) %>%
+  # Now calculate relative change per rep
+  mutate(rel_change = (tot.catches - tot.catches.ref) / tot.catches.ref * 100) %>%
+  # Then summarize across reps
+  group_by(scenario, group, mpa.coverage, mpa) %>%
+  summarize(
+    rel_change_mean = mean(rel_change, na.rm = T),
+    rel_change_sd   = sd(rel_change,   na.rm = T),
+    .groups = "drop"
+  ) %>%
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario == "Mazor scenario 8")
+```
+
+Barplots for Suppmat with sd for variability between 30 replicate scenarios
+```{r}
+# load data
+biomass_by_groups_data <- load_multiple_csv(here("data/biomass_by_groups"))
+
+biomass_by_groups <- biomass_by_groups_data[[2]] #GSA prop
+
+catch_by_groups_data <- load_multiple_csv(here("data/catch_by_groups"))
+
+catch_by_groups <- catch_by_groups_data[[2]] #GSA prop
+
+# FIGURE
+sp_group_levels <- c("Medium & large pelagic", "Medium & large demersal", "Medium & large benthic", "Small benthic", "Small pelagic", "Crustacean","Cephalopod", "Small demersal")
+
+legend_scenarios <- c("Existing network", "Random 11", "EEZ-conservation 1", "Micheli", "Mazor scenario 8", "Mazor scenario 9")
+
+group_levels <- c("Existing network", "Random", "EEZ-scale conservation", "Micheli", "Mazor scenario 8", "Mazor scenario 9")
+
+legend_labels <- c("S1-Current", "S2-Random basin", "S3-Random EEZ", "S4-Micheli", "S5-Mazor GFCM", "S6-Mazor SAUP")
+
+
+# Current and literature (S1, S4-S6)
+for (scen in 1:4){
+  plot.fig.A6.other.scenarios.S1.S4.S5.S6.with.sd(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
+
+}
+
+# Random basin (average of 10) (S2)
+plot.fig.A6.other.scenarios.S2.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+
+# Random EEZ (average of 10) (S3)
+plot.fig.A6.other.scenarios.S3.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+
+```
+
 
 # Figure 4 - Large Fish Indicator (4A) and taxonomic alpha-diversity (4B) inside and outside MPAs
+# PROPOSAL - change to relative changes in total Med (same comparable baseline) + add Figure 5 - specifically to show how much diversity is encompassed by the networks (with evenness as well)
 ```{r}
 
 # load data
@@ -365,21 +461,15 @@ LFI_GSA_prop <- LFI_data[[2]] %>%
 LFI_GSA_uniform <- LFI_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") 
 
+
 # Diversity
-diversity_data <- load_multiple_csv(here("data/diversity"))
 
-Mean_diversity_inside_GSA_prop_lit = diversity_data[[1]]
+## With sd -- Med
+Mean_diversity_Med_GSA_prop_lit =  read.csv(here("data/diversity/Mean_diversity_Med_lit_scenarios_ed_with_sd.csv"))
 
-Mean_diversity_inside_GSA_prop_random_basin = diversity_data[[2]]
+Mean_diversity_Med_GSA_prop_random_basin =  read.csv(here("data/diversity/Mean_diversity_Med_random_basin_scenarios_ed_with_sd.csv"))
 
-Mean_diversity_inside_GSA_prop_random_EEZ = diversity_data[[3]]
-
-Mean_diversity_outside_GSA_prop_lit = diversity_data[[4]]
-
-Mean_diversity_outside_GSA_prop_random_basin = diversity_data[[5]]
-
-Mean_diversity_outside_GSA_prop_random_EEZ = diversity_data[[6]]
-
+Mean_diversity_Med_GSA_prop_random_EEZ =  read.csv(here("data/diversity/Mean_diversity_Med_random_EEZ_scenarios_ed_with_sd.csv"))
 
 # FIGURE
 legend_scenarios <- c("Existing network", "Micheli", "Random 11", "Mazor scenario 8", "EEZ-conservation 1", "Mazor scenario 9")
@@ -395,44 +485,113 @@ plot.fig4(height_value = 11, width_value = 11, save = TRUE)
 
 ```
 
-
-# Figure 5 - RDA 
-Labels for final figure were added manually.
+For main text: replicates for LFI
 ```{r}
-# load data
-area = "Entire Mediterranean Sea"
-
-biomass_data <- load_multiple_csv(here("data/total_biomass"))
-
-Biom_NoCC_fline <- biomass_data[[1]] %>%
-  mutate(Fishing_scenario = "Fishing-the-line") %>%
-  filter(mpa == area)
-
-Biom_NoCC_GSA_prop <- biomass_data[[2]] %>%
-  mutate(Fishing_scenario = "Proportional by GSA") %>%
-  filter(mpa == area)
-
-Biom_NoCC_GSA_uniform <- biomass_data[[3]] %>%
-  mutate(Fishing_scenario = "Uniform by GSA") %>%
-  filter(mpa == area)
+# With replicates for text
+LFI_10 = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
+  
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  rename(LFI = mean_LFI_60_years) %>%
+  ungroup() %>%
+  group_by(mpa_coverage) %>%
+  summarize(mean = mean(LFI),
+            sd = sd(LFI))
 
 
-catch_data <- load_multiple_csv(here("data/total_catch"))
+LFI_all_fishing_scenarios_lit = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
+  filter(scenario %in% c("Micheli", "Mazor scenario 8", "Mazor scenario 9", "Existing network")) %>%
+  mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
+  group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
+  summarise(mean_LFI_reps = mean(mean_LFI_60_years),
+            sd_LFI_reps = sd(mean_LFI_60_years))
+
+LFI_all_fishing_scenarios_Random = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
+  filter(grepl('Random', scenario)) %>%
+  mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
+  group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
+  summarise(mean_LFI_reps = mean(mean_LFI_60_years)) %>%
+  ungroup() %>%
+  group_by(mpa_coverage, mpa, Fishing_scenario) %>%
+  mutate(high = max(mean_LFI_reps),
+         low = min(mean_LFI_reps),
+         mean = mean(mean_LFI_reps)) %>%
+  mutate(scenario_group = "Random")
+
+LFI_all_fishing_scenarios_EEZ = rbind(LFI_GSA_prop, LFI_GSA_uniform, LFI_Fline) %>%
+  filter(grepl('EEZ', scenario)) %>%
+  mutate(x_scale = mpa_coverage * pas/6229 * 100) %>%
+  group_by(mpa_coverage, mpa, scenario, Fishing_scenario) %>%
+  summarise(mean_LFI_reps = mean(mean_LFI_60_years)) %>%
+  ungroup() %>%
+  group_by(mpa_coverage, mpa, Fishing_scenario) %>%
+  mutate(high = max(mean_LFI_reps),
+         low = min(mean_LFI_reps),
+         mean = mean(mean_LFI_reps)) %>%
+  mutate(scenario_group = "EEZ-conservation")  
+
+LFI_10_lit = LFI_all_fishing_scenarios_lit %>%
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  ungroup() %>%
+  dplyr::select(mpa_coverage, scenario, Fishing_scenario, mean_LFI_reps) %>%
+  rename(LFI = mean_LFI_reps)
 
 
-Catch_NoCC_fline <- catch_data[[1]] %>%
-  mutate(Fishing_scenario = "Fishing-the-line") %>%
-  filter(mpa == area)
+LFI_10_random = LFI_all_fishing_scenarios_Random %>%
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  ungroup() %>%
+  distinct(mean, .keep_all = T) %>%
+  dplyr::select(mpa_coverage, scenario_group, Fishing_scenario, mean) %>%
+  rename(LFI = mean,
+         scenario = scenario_group)
 
-Catch_NoCC_GSA_prop <- catch_data[[2]] %>%
-  mutate(Fishing_scenario = "Proportional by GSA") %>%
-  filter(mpa == area)
+LFI_10_EEZ = LFI_all_fishing_scenarios_EEZ %>%
+  filter(mpa == "Entire Mediterranean Sea") %>%
+  ungroup() %>%
+  distinct(mean, .keep_all = T) %>%
+  dplyr::select(mpa_coverage, scenario_group, Fishing_scenario, mean) %>%
+  rename(LFI = mean,
+         scenario = scenario_group)
 
-Catch_NoCC_GSA_uniform <- catch_data[[3]] %>%
-  mutate(Fishing_scenario = "Uniform by GSA") %>%
-  filter(mpa == area)
+LFI_10 = rbind(LFI_10_lit, LFI_10_random, LFI_10_EEZ) %>%
+  group_by(mpa_coverage) %>%
+  summarize(mean = mean(LFI),
+            sd = sd(LFI))
 
-# LFI
+# inside
+LFI_10_lit_inside = LFI_all_fishing_scenarios_lit %>%
+  filter(mpa == "Inside MPAs") %>%
+  ungroup() %>%
+  dplyr::select(mpa_coverage, scenario, Fishing_scenario, mean_LFI_reps) %>%
+  rename(LFI = mean_LFI_reps)
+
+
+LFI_10_random_inside = LFI_all_fishing_scenarios_Random %>%
+  filter(mpa == "Inside MPAs") %>%
+  ungroup() %>%
+  distinct(mean, .keep_all = T) %>%
+  dplyr::select(mpa_coverage, scenario_group, Fishing_scenario, mean) %>%
+  rename(LFI = mean,
+         scenario = scenario_group)
+
+LFI_10_EEZ_inside = LFI_all_fishing_scenarios_EEZ %>%
+  filter(mpa == "Inside MPAs") %>%
+  ungroup() %>%
+  distinct(mean, .keep_all = T) %>%
+  dplyr::select(mpa_coverage, scenario_group, Fishing_scenario, mean) %>%
+  rename(LFI = mean,
+         scenario = scenario_group)
+
+LFI_10_inside = rbind(LFI_10_lit_inside, LFI_10_random_inside, LFI_10_EEZ_inside) %>%
+  group_by(mpa_coverage) %>%
+  summarize(mean = mean(LFI),
+            sd = sd(LFI))
+
+```
+
+
+Supplementary material - LFI inside/outside/Med with sd between replicates (Figure S7.1)
+```{r}
+# LFI data
 LFI_data <- load_multiple_csv(here("data/large_fish_indicator"))
 
 LFI_Fline <- LFI_data[[1]] %>%
@@ -444,20 +603,75 @@ LFI_GSA_prop <- LFI_data[[2]] %>%
 LFI_GSA_uniform <- LFI_data[[3]] %>%
   mutate(Fishing_scenario = "Uniform by GSA") 
 
-# Diversity
-diversity_data <- load_multiple_csv(here("data/diversity"))
+# FIGURE
+legend_scenarios <- c("Existing network", "Micheli", "Random 11", "Mazor scenario 8", "EEZ-conservation 1", "Mazor scenario 9")
 
-Mean_diversity_inside_GSA_prop_lit = diversity_data[[1]]
 
-Mean_diversity_inside_GSA_prop_random_basin = diversity_data[[2]]
+group_levels <- c("Existing network", "Micheli", "Random", "Mazor scenario 8", "EEZ-scale conservation", "Mazor scenario 9")
 
-Mean_diversity_inside_GSA_prop_random_EEZ = diversity_data[[3]]
 
-Mean_diversity_outside_GSA_prop_lit = diversity_data[[4]]
+legend_labels <- c("S1-Current", "S4-Micheli", "S2-Random basin", "S5-Mazor GFCM", "S3-Random EEZ", "S6-Mazor SAUP")
+  
 
-Mean_diversity_outside_GSA_prop_random_basin = diversity_data[[5]]
+plot.fig.suppmat.LFI.inside.outside.Med.with.sd(height_value = 11, width_value = 11, save = TRUE)
+```
 
-Mean_diversity_outside_GSA_prop_random_EEZ = diversity_data[[6]]
+Supplementary material - inside/outside (Figure S8.3)
+```{r}
+## With sd -- inside and outside MPAs (Suppmat)
+Mean_diversity_inside_GSA_prop_lit =  read.csv(here("data/diversity/Mean_diversity_inside_lit_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_inside_GSA_prop_random_basin =  read.csv(here("data/diversity/Mean_diversity_inside_random_basin_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_inside_GSA_prop_random_EEZ =  read.csv(here("data/diversity/Mean_diversity_inside_random_EEZ_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_outside_GSA_prop_lit =  read.csv(here("data/diversity/Mean_diversity_outside_lit_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_outside_GSA_prop_random_basin =  read.csv(here("data/diversity/Mean_diversity_outside_random_basin_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_outside_GSA_prop_random_EEZ =  read.csv(here("data/diversity/Mean_diversity_outside_random_EEZ_scenarios_ed_with_sd.csv"))
+
+# plot diversity and evenness inside and outside FPAs
+plot.fig4.suppmat(height_value = 11, width_value = 11, save = TRUE)
+```
+
+
+# Figure 5 - RDA absolute indicators - total Med 
+Fishing redistribution strategy: Proportional by GSA 
+FPA coverage: 10% 
+Five indicators: biomass, catch, LFI, diversity, evenness
+Labels for final figure were added manually for improve readability.
+```{r}
+# load data
+area = "Entire Mediterranean Sea"
+
+biomass_data <- load_multiple_csv(here("data/total_biomass"))
+
+Biom_GSA_prop <- biomass_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+
+catch_data <- load_multiple_csv(here("data/total_catch"))
+
+Catch_GSA_prop <- catch_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") %>%
+  filter(mpa == area)
+
+
+# LFI
+LFI_data <- load_multiple_csv(here("data/large_fish_indicator"))
+
+LFI_GSA_prop <- LFI_data[[2]] %>%
+  mutate(Fishing_scenario = "Proportional by GSA") 
+
+
+# Diversity and evenness
+Mean_diversity_Med_GSA_prop_lit =  read.csv(here("data/diversity/Mean_diversity_Med_lit_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_Med_GSA_prop_random_basin =  read.csv(here("data/diversity/Mean_diversity_Med_random_basin_scenarios_ed_with_sd.csv"))
+
+Mean_diversity_Med_GSA_prop_random_EEZ =  read.csv(here("data/diversity/Mean_diversity_Med_random_EEZ_scenarios_ed_with_sd.csv"))
 
 # calculate spatial metrics
 metrics_calculated = TRUE
@@ -484,10 +698,37 @@ spatial_metrics <- load_multiple_csv(here("data/spatial_metrics"))
 Distance_to_coast = spatial_metrics[[1]]
 Metrics_mpa_scenarios = spatial_metrics[[2]]
 
+
+# Capture extent first
+tmp <- plot(spe.rda, scaling = 2, type = "n")
+rda1_range <- par("usr")[1:2]
+rda2_range <- par("usr")[3:4]
+dev.off()
+
+# plot RDA
 plot.RDA(scaling_type = 1)
 plot.RDA(scaling_type = 2)
 
+# plot heatmap showing area of best compromise to maximize biomass and minimize catch losses
+
+spe.rda <- compute.RDA()
+
+# Check the extracted equations printed to console
+res <- compute_heatmap(spe.rda, scaling_type = 2, rda1_range, rda2_range)
+
+# Individual plots
+plot_rda_heatmap(spe.rda, variable = "biomass", grid_res = 100,
+                 save_path = here("figures/RDA_heatmap_biomass.png"))
+
+plot_rda_heatmap(spe.rda, variable = "catch", grid_res = 100,
+                 save_path = here("figures/RDA_heatmap_catch.png"))
+
+plot_rda_heatmap(spe.rda, variable = "joint", grid_res = 100,
+                 save_path = here("figures/RDA_heatmap_joint.png"))
+
+
 ```
+
 
 # Figure 5 - Spatial metrics selection
 Warning: can take time (~ 20 minutes) to obtain the list of selected variables.
@@ -652,7 +893,7 @@ sar_all_cleaned = data_clean(sar_2019) # WGS84
 shipping_plot(shipping_routes, sar_all_cleaned, SAR_data_noRFI, save = TRUE)
 ```
 
-# Figure S5.1 & S5.2 - variogram
+# Figure S5.1 & S5.2 - biomass and catch variogram
 ```{r}
 area = "Entire Mediterranean Sea"
 
@@ -670,15 +911,15 @@ Catch <- catch_data[[2]] %>%
 
 # fig S5.1
 
-plot.figA5.1(Biomass, Catch, save = TRUE)
+plot.figS5.1(Biomass, Catch, save = TRUE)
 
 # fig S5.2
 
 all_mpa_scenarios = c(lit.scenarios.name, random.scenarios.name)
-plot.figA5.2(Biomass, Catch, nreps = 30, save = TRUE)
+plot.figS5.2(Biomass, Catch, nreps = 30, save = TRUE)
 
 ```
-# Figure S5.3 - spatial maps of total biomass and catch
+# Figure S5.4 - spatial maps of total biomass and catch
 ```{r}
 
 worldbounds = st_read(here("data/shapefiles/world_map/world-bounds/world-bounds-a.shp"))
@@ -689,7 +930,7 @@ mpa.mask.dir = lit.mpa.mask.dir
 
 # only for scenario S5- Mazor-GFCM
 
-plot.fig.A5(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_coverage = 10, mpa.mask.dir)
+plot.fig.suppmat.S5.4(yield_save = TRUE, biomass_save = TRUE, size_save = FALSE, mpa_coverage = 10, mpa.mask.dir)
 ```
 
 
@@ -702,7 +943,7 @@ outputDir.mpa.10 = file.path(here("data", "small_pelagics_biomass", "Mazor_scena
 
 outputDir.mpa.30 = file.path(here("data", "small_pelagics_biomass", "Mazor_scenario_8", "output_mpa_30", "biomass_yield"))
 
-plot.fig.A6.1(outputDir.nompa, outputDir.mpa.10, outputDir.mpa.30, vertical_distrib)
+plot.fig.S6.1(outputDir.nompa, outputDir.mpa.10, outputDir.mpa.30, vertical_distrib)
 ```
 
 
@@ -711,21 +952,21 @@ plot.fig.A6.1(outputDir.nompa, outputDir.mpa.10, outputDir.mpa.30, vertical_dist
 outputDir.nompa = file.path(here("data/predation_pressure/Pred_pressure_NoMPA"))
 outputDir.mpa = file.path(here("data/predation_pressure/Pred_pressure_Mazor8_10pct_GSAprop"))
 
-plot.fig.A6.2(save = TRUE)
+plot.fig.S6.2(save = TRUE)
 ```
 
 
-# Figure S7.1 - alpha-taxonomic divesity inside MPAs before and after their establishment
+# Figure Suppmat S8.1 - alpha-taxonomic divesity inside FPAs before and after their establishment
 ```{r}
-plot.figA7.1(save = TRUE)
+fig.suppmat.8.1.before.after.diversity(save = TRUE)
 ```
 
-# Figure S7.2 - alpha-taxonomic divesity and abundance maps before MPA establishment
+# Figure S8.2 - alpha-taxonomic divesity, evenness and species richness before FPA establishment
 ```{r}
-plot.figA7.2(save = TRUE)
+plot.fig.suppmat.S8.2.diversity.richness.evenness.maps(save = TRUE)
 ```
 
-# Figure S8.1 - heatmap RDA
+# Figure S9.1 - heatmap RDA
 ```{r}
 plot.heatmap.X.vars()
 ```
