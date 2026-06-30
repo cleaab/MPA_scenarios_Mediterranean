@@ -875,7 +875,7 @@ plot(rda_final, scaling = 2)
 
 ```
 
-# Figure S2.1 - cumulated ship density per pixel
+# Figure S2.2 - cumulated ship density per pixel
 ```{r}
 shipping_routes = raster(here("data/SAR_Mediterranean/shipping/shipping.tif")) # WGS84
 
