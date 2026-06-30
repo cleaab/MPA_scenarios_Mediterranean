@@ -1,6 +1,6 @@
 
 
-plot.figA5.1 <- function(Biomass, Catch, save = TRUE){
+plot.figS5.1 <- function(Biomass, Catch, save = TRUE){
   # Variogram catches & biomass
   # BIOMASS & CATCH indicators - NO MPA all fishing scenarios
   Biom_nompa = Biomass %>%
@@ -73,7 +73,7 @@ plot.figA5.1 <- function(Biomass, Catch, save = TRUE){
   
 }
 
-plot.figA5.2 <- function(Biomass, Catch, nreps = 30, save = TRUE){
+plot.figS5.2 <- function(Biomass, Catch, nreps = 30, save = TRUE){
   
   for(scen in 1:length(lit.scenarios.name)){
     
