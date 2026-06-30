@@ -1,13 +1,13 @@
-#' Function to plot alpha-taxonomic divesity inside MPAs before and after their establishment
+#' Function to plot alpha-taxonomic divesity inside FPAs before and after their establishment
 #'
 #' 
 #' @param data OSMOSE-MED simulation outputs alpha-taxonomic divesity
 #' 
-#' @return Figure A7.1 (appendix)
+#' @return Figure S8.1 (appendix)
 #'
 #' @export
 
-plot.figA7.1 <- function(save = TRUE){
+plot.S8.1.diversity.before.after.FPAs <- function(save = TRUE){
   # Abundance map before MPAs
   nc_abundance_spatial  = nc_open(here("data/spatial/Abundance_nompa_scenario.nc"))
   abundance_spatial  = ncvar_get(nc_abundance_spatial, "Abundance")
@@ -196,7 +196,7 @@ plot.figA7.1 <- function(save = TRUE){
     scale_colour_manual(values = mpa_colors, labels = legend_labels) +
     scale_fill_manual(values = mpa_colors, labels = legend_labels) +
     theme_bw() +
-    labs(x ="MPA coverage (%)", y = "Taxonomic diversity", title = "Current & Science-informed") +
+    labs(x ="FPA coverage (%)", y = "Taxonomic diversity", title = "Current & Science-informed") +
     
     theme(legend.title = element_blank(),
           legend.position = "bottom") +
@@ -212,7 +212,7 @@ plot.figA7.1 <- function(save = TRUE){
     geom_line(data = Mean_diversity_ref_inside_random_basin, aes(x = mpa_coverage, y = mean_exp_H_inside_ref, colour = mpa_scenario, lty = before_after), lwd = 0.8, alpha=1) +
     geom_line(data = Mean_diversity_inside_GSA_prop_random_basin, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario, lty = before_after), lwd = 0.8, alpha=1) +
     geom_ribbon(data = Diversity_before_after_random_basin, aes(x = mpa_coverage, ymin = mean_exp_H_inside_ref, ymax = mean_exp_H_inside, fill = mpa_scenario), alpha = 0.5) +
-    labs(x ="MPA coverage (%)", y = "Taxonomic diversity", title = "S2-Random basin") +
+    labs(x ="FPA coverage (%)", y = "Taxonomic diversity", title = "S2-Random basin") +
     scale_colour_grey(start = 0, end = 0.8, labels = legend_labels) +
     scale_fill_grey(start = 0, end = 0.8,labels = legend_labels) +
     theme_bw() +
@@ -233,7 +233,7 @@ plot.figA7.1 <- function(save = TRUE){
     geom_line(data = Mean_diversity_ref_inside_random_EEZ, aes(x = mpa_coverage, y = mean_exp_H_inside_ref, colour = mpa_scenario, lty = before_after), lwd = 0.8, alpha=1) +
     geom_line(data = Mean_diversity_inside_GSA_prop_random_EEZ, aes(x = mpa_coverage, y = mean_exp_H_inside, colour = mpa_scenario, lty = before_after), lwd = 0.8, alpha=1) +
     geom_ribbon(data = Diversity_before_after_random_EEZ, aes(x = mpa_coverage, ymin = mean_exp_H_inside_ref, ymax = mean_exp_H_inside, fill = mpa_scenario), alpha = 0.5) +
-    labs(x ="MPA coverage (%)", y = "Taxonomic diversity", title = "S3-Random EEZ") +
+    labs(x ="FPA coverage (%)", y = "Taxonomic diversity", title = "S3-Random EEZ") +
     scale_colour_grey(start = 0, end = 0.8, labels = legend_labels) +
     scale_fill_grey(start = 0, end = 0.8,labels = legend_labels) +
     theme_bw() +
@@ -246,7 +246,7 @@ plot.figA7.1 <- function(save = TRUE){
   
   ###Join together
   
-  figA7.2 <- plot_grid(Diversity_before_after_lit_GSAprop, Diversity_before_after_random_basin_GSAprop, Diversity_before_after_random_EEZ_GSAprop,
+  figS8.1 <- plot_grid(Diversity_before_after_lit_GSAprop, Diversity_before_after_random_basin_GSAprop, Diversity_before_after_random_EEZ_GSAprop,
                      ncol=3,
                      nrow=1,
                      align = "hv",
@@ -254,6 +254,6 @@ plot.figA7.1 <- function(save = TRUE){
                      rel_heights = c(1,1, 1))
   
   
-  ggsave(here("figures/appendix/FigA7.1_4__taxonomic_diversity_inside_NTMPAs_before_and_after_establishment_GSAprop_ed.png"), height = 7, width = 10,  dpi = 1000)
+  ggsave(here("figures/appendix/FigS8.1_taxonomic_diversity_inside_FPAs_before_and_after_establishment_GSAprop_ed.png"), height = 7, width = 10,  dpi = 1000)
   
 }
