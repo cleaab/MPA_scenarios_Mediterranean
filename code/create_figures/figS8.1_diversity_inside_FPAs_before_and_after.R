@@ -11,42 +11,33 @@ plot.figA7.1 <- function(save = TRUE){
   # Abundance map before MPAs
   nc_abundance_spatial  = nc_open(here("data/spatial/Abundance_nompa_scenario.nc"))
   abundance_spatial  = ncvar_get(nc_abundance_spatial, "Abundance")
+  nc_close(nc_abundance_spatial)  # ← close immediately after reading
   
-  abundance_spatial_mean = apply(abundance_spatial, c(1,2,3), mean, na.rm = T)
-  abundance_spatial_mean_sp = apply(abundance_spatial, c(1,2), sum, na.rm = T) # nombre tot d'individus
+  abundance_spatial_tot_sp = apply(abundance_spatial, c(1,2,4), sum, na.rm = T) # nombre tot d'individus
+  
+  # Shannon index: sum over all species of -(p * log(p))
+  # Initialize H_sum [190, 83, 30] with zeros
+  H_sum = array(0, dim = c(190, 83, 30))
   
   for (i in 1:101){
+    # Extract species i: [190, 83, 30], drop=FALSE not needed since dim 3 = 1 will auto-drop
+    sp_abundance = abundance_spatial[1:190, 1:83, i, 1:30]  # [190, 83, 30]
     
-    if (i == 1){
-      abundance_spatial_sp1 = abundance_spatial_mean[1:190,1:83,i]
-      p_sp1 = abundance_spatial_sp1/abundance_spatial_mean_sp
-      H_sp1 = -(p_sp1*log(p_sp1))
-      
-      abundance_spatial_sp2 = abundance_spatial_mean[1:190,1:83,i+1]
-      p_sp2 = abundance_spatial_sp2/abundance_spatial_mean_sp
-      H_sp2 = -(p_sp2*log(p_sp2))
-      
-      sum_matrix <- mapply(function(x, y) sum(c(x, y), na.rm = TRUE), H_sp2, H_sp1)
-      sum_matrix <- matrix(sum_matrix, nrow = nrow(H_sp2))
-    }
+    p_sp = sp_abundance / abundance_spatial_tot_sp           # [190, 83, 30]
     
-    else{
-      if (i == 2){
-        i = 3
-      }
-      abundance_spatial_sp1 = abundance_spatial_mean[1:190,1:83,i]
-      p_sp1 = abundance_spatial_sp1/abundance_spatial_mean_sp
-      H_sp1 = -(p_sp1*log(p_sp1))
-      sum_matrix <- mapply(function(x, y) sum(c(x, y), na.rm = TRUE), sum_matrix, H_sp1)
-      sum_matrix <- matrix(sum_matrix, nrow = nrow(H_sp1))
-      
-    }
+    # Suppress log(0): 0*log(0) = 0 by convention in Shannon
+    H_sp = ifelse(p_sp > 0, -(p_sp * log(p_sp)), 0)         # [190, 83, 30]
     
+    H_sum = H_sum + H_sp
   }
   
-  sum_matrix[sum_matrix == 0] = NA
-  exp_H_spatial = exp(sum_matrix)
-  mean_exp_H_spatial = mean(exp_H_spatial, na.rm = T)
+  # Set cells with no abundance to NA
+  H_sum[abundance_spatial_tot_sp == 0] = NA
+  
+  exp_H_spatial = exp(H_sum)
+  exp_H_spatial_mean_reps = apply(exp_H_spatial, c(1,2), mean, na.rm = T)
+  
+  mean_exp_H_spatial = mean(exp_H_spatial_mean_reps, na.rm = T)
   
   
   # before implementing MPAs -----------------------------
@@ -59,7 +50,7 @@ plot.figA7.1 <- function(save = TRUE){
       mpa = mpa[order(nrow(mpa):1),] # reverse row order because 0 is bottom left in osmose
       mpa = t(as.matrix(mpa))
       
-      exp_H_spatial_copy = exp_H_spatial
+      exp_H_spatial_copy = exp_H_spatial_mean_reps
       exp_H_spatial_copy[mpa == 0] = NA # keep only inside MPAs
       
       # average exp_H between all cells in areas that will become MPAs (map before MPAs)
@@ -96,7 +87,7 @@ plot.figA7.1 <- function(save = TRUE){
       mpa = mpa[order(nrow(mpa):1),] # reverse row order because 0 is bottom left in osmose
       mpa = t(as.matrix(mpa))
       
-      exp_H_spatial_copy = exp_H_spatial
+      exp_H_spatial_copy = exp_H_spatial_mean_reps
       exp_H_spatial_copy[mpa == 0] = NA # keep only inside MPAs
       
       # average exp_H between all cells in areas that will become MPAs (map before MPAs)
@@ -127,7 +118,6 @@ plot.figA7.1 <- function(save = TRUE){
     mutate(before_after = "Before MPAs") %>%
     rename(mean_exp_H_inside_ref = mean_exp_H_inside)
   
-  
   Mean_diversity_ref_inside_random_basin = Mean_diversity_inside_random_scenarios %>%
     filter(grepl('Random', mpa_scenario)) %>%
     group_by(mpa_coverage) %>%
@@ -149,11 +139,15 @@ plot.figA7.1 <- function(save = TRUE){
   
   
   ### AFTER mpas
-  Mean_diversity_inside_GSA_prop_lit = read.csv(here("data/diversity/Mean_diversity_inside_lit_scenarios.csv")) %>%
-    #dplyr::select(2:4) %>%
+  Mean_diversity_inside_GSA_prop_lit = read.csv(here("data/diversity/Mean_diversity_inside_lit_scenarios_ed_with_sd.csv")) %>%
+    group_by(mpa_scenario, mpa_coverage) %>%
+    summarize(mean_exp_H_inside = mean(mean_exp_H, na.rm = T)) %>% #mean across 30 replicates
     mutate(before_after = "After MPAs")
   
-  Mean_diversity_inside_GSA_prop_random_basin = read.csv(here("data/diversity/Mean_diversity_inside_random_basin_scenarios.csv")) %>%
+  Mean_diversity_inside_GSA_prop_random_basin = read.csv(here("data/diversity/Mean_diversity_inside_random_basin_scenarios_ed_with_sd.csv")) %>%
+    group_by(mpa_scenario, mpa_coverage) %>%
+    summarize(mean_exp_H_inside = mean(mean_exp_H, na.rm = T)) %>% #mean across 30 replicates
+    ungroup() %>%
     group_by(mpa_coverage) %>%
     mutate(high = max(mean_exp_H_inside, na.rm = T),
            low = min(mean_exp_H_inside, na.rm = T)) %>%
@@ -163,7 +157,10 @@ plot.figA7.1 <- function(save = TRUE){
   Mean_diversity_inside_GSA_prop_random_basin$mpa_scenario <- gsub("-rep", " ", Mean_diversity_inside_GSA_prop_random_basin$mpa_scenario)
   
   
-  Mean_diversity_inside_GSA_prop_random_EEZ = read.csv(here("data/diversity/Mean_diversity_inside_random_EEZ_scenarios.csv")) %>%
+  Mean_diversity_inside_GSA_prop_random_EEZ = read.csv(here("data/diversity/Mean_diversity_inside_random_EEZ_scenarios_ed_with_sd.csv")) %>%
+    group_by(mpa_scenario, mpa_coverage) %>%
+    summarize(mean_exp_H_inside = mean(mean_exp_H, na.rm = T)) %>% #mean across 30 replicates
+    ungroup() %>%
     group_by(mpa_coverage) %>%
     mutate(high = max(mean_exp_H_inside, na.rm = T),
            low = min(mean_exp_H_inside, na.rm = T)) %>%
@@ -203,7 +200,7 @@ plot.figA7.1 <- function(save = TRUE){
     
     theme(legend.title = element_blank(),
           legend.position = "bottom") +
-    ylim(1.137, 1.163)
+    ylim(1.8, 3.7)
   
   
   # Random-basin scenarios
@@ -221,7 +218,7 @@ plot.figA7.1 <- function(save = TRUE){
     theme_bw() +
     theme(legend.title = element_blank(),
           legend.position = "none") +
-    ylim(1.137, 1.163)
+    ylim(1.8, 3.7)
   
   
   
@@ -242,8 +239,8 @@ plot.figA7.1 <- function(save = TRUE){
     theme_bw() +
     theme(legend.title = element_blank(),
           legend.position = "none") +
-    ylim(1.137, 1.163)
-  
+    ylim(1.8, 3.7)
+
   
   
   
@@ -257,6 +254,6 @@ plot.figA7.1 <- function(save = TRUE){
                      rel_heights = c(1,1, 1))
   
   
-  ggsave(here("figures/appendix/FigA7.1_4__taxonomic_diversity_inside_NTMPAs_before_and_after_establishment_GSAprop.png"), height = 7, width = 10,  dpi = 1000)
+  ggsave(here("figures/appendix/FigA7.1_4__taxonomic_diversity_inside_NTMPAs_before_and_after_establishment_GSAprop_ed.png"), height = 7, width = 10,  dpi = 1000)
   
 }
