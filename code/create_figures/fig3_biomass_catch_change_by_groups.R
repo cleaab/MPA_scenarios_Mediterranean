@@ -51,7 +51,7 @@ plot.biomass.change.by.groups <- function(biomass_by_groups, scen = 1, f = 2){
           legend.key.height = unit(1, 'cm'), #change legend key height
           legend.key.width = unit(1, 'cm'), #change legend key width
           legend.title = element_blank(), #change legend title font size
-          legend.text = element_text(size=10)) + #change legend text font size 
+          legend.text = element_text(size=12)) + #change legend text font size 
     
     scale_fill_brewer(palette="BrBG", direction = -1) +
    
@@ -108,7 +108,7 @@ plot.catch.change.by.groups <- function(catch_by_groups, scen = 1, f = 2){
               legend.key.height = unit(1, 'cm'), #change legend key height
               legend.key.width = unit(1, 'cm'), #change legend key width
               legend.title = element_blank(), #change legend title font size
-              legend.text = element_text(size=10)) + #change legend text font size 
+              legend.text = element_text(size=12)) + #change legend text font size 
         scale_fill_brewer(palette="BrBG", direction = -1) +
         
         labs(title= paste0("FPA Scenario ", MPA_scenarios_name[scen]), subtitle= paste0(Fishing_scenario_name[f]),
@@ -151,7 +151,7 @@ plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f 
     
     ungroup() %>%
     group_by(mpa.coverage) %>%
-    mutate(high = max(mean_rel_change),
+    summarize(high = max(mean_rel_change),
            low = min(mean_rel_change),
            mean = mean(mean_rel_change)) %>%
     mutate(scenario_group = "Random")
@@ -171,7 +171,7 @@ plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f 
     
     ungroup() %>%
     group_by(mpa.coverage) %>%
-    mutate(high = max(mean_rel_change),
+    summarize(high = max(mean_rel_change),
            low = min(mean_rel_change),
            mean = mean(mean_rel_change)) %>%
     mutate(scenario_group = "EEZ-scale conservation")
@@ -182,10 +182,10 @@ plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f 
   seuil_small_pel_inside_rel_change <- ggplot() +
     geom_line(data = Biom_small_pelagics_lit_current, aes(x = mpa.coverage, y = mean_rel_change, colour = scenario), lwd = 0.8, alpha=1) +
     
-    geom_line(data = Biom_small_pelagics_random, aes(x = mpa.coverage, y = mean_rel_change, colour = scenario), lwd = 0.1, alpha=1) +
+    geom_line(data = Biom_small_pelagics_random, aes(x = mpa.coverage, y = mean, colour = scenario_group), lwd = 0.8, alpha=1) +
     geom_ribbon(data = Biom_small_pelagics_random, aes(x = mpa.coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.3) +
     
-    geom_line(data = Biom_small_pelagics_EEZ, aes(x = mpa.coverage, y = mean_rel_change, colour = scenario), lwd = 0.1, alpha=1) +
+    geom_line(data = Biom_small_pelagics_EEZ, aes(x = mpa.coverage, y = mean, colour = scenario_group), lwd = 0.8, alpha=1) +
     geom_ribbon(data = Biom_small_pelagics_EEZ, aes(x = mpa.coverage, ymin = low, ymax = high, fill = scenario_group), alpha = 0.5) +
     
     
@@ -199,11 +199,11 @@ plot.small.pelagics.biomass.change.inside.MPAs <- function(biomass_by_groups, f 
           legend.title = element_text(size=12), #change legend title font size
           legend.text = element_text(size=10)) +  #change legend text font size 
     scale_colour_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    scale_fill_manual(values = mpa_colors, breaks = legend_scenarios, labels = legend_labels) +
-    labs(x ="FPA coverage (%)", y = "Biomass change (%)", title = "Small pelagic fish", subtitle = "Inside reserves") +
+    scale_fill_manual(values = mpa_colors, breaks = group_levels, labels = legend_labels) +
+    labs(x ="FPA coverage (%)", y = "Biomass change (%)", title = "Small pelagic fish", subtitle = "Inside FPAs") +
     theme(legend.position = "bottom") +
     theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 12), plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 10))
+    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14), plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 12))
   
   
   return(seuil_small_pel_inside_rel_change)
@@ -232,21 +232,21 @@ plot.fig3 <- function(biomass_by_groups, catch_by_groups, scen, f, save = TRUE){
                      align = "hv") +
     labs(title = "All species", subtitle = "Entire Mediterranean Sea") +
     theme(plot.margin = margin(0.5,0.5,0.5,0.5, "cm"))+
-    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14, margin=margin(b=10)), plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 10)) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16, margin=margin(b=10)), plot.subtitle = element_text(hjust = 0.5, face = "italic", size = 12)) +
     theme(plot.background = element_rect(fill = "white", color = NA))
   
   
   # ------ Fig 3B
   seuil_small_pel_inside_rel_change = plot.small.pelagics.biomass.change.inside.MPAs(biomass_by_groups, f)
   
-  fig3B <- seuil_small_pel_inside_rel_change + theme(plot.title = element_text(hjust = 0.5, size=14, margin=margin(b=10)), legend.title = element_blank(), legend.direction = "vertical") 
+  fig3B <- seuil_small_pel_inside_rel_change + theme(plot.title = element_text(hjust = 0.5, size=16, margin=margin(b=10)), legend.title = element_blank(), legend.direction = "vertical") 
   
   
   ## fig3 ----------------------------------------------------------------------
   fig3 <- plot_grid(fig3A, fig3B, ncol = 2, rel_widths = c(2, 1), labels = c("A", "B"))
   
   if (save == TRUE){
-    ggsave(here("figures/Fig_3_total_biomass_catch_by_groups.png"), dpi = 1000, height = 10, width = 10)
+    ggsave(here("figures/Fig_3_total_biomass_catch_by_groups_v2.png"), dpi = 1000, height = 10, width = 12)
   }
   
 }
