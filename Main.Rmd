@@ -267,6 +267,100 @@ Statistical.difference.scenarios(Catch_GSA_prop, Catch_GSA_uniform, Catch_fline,
 
 ```
 
+For main text: variability across 30 replicates for total biomass and total catch
+```{r}
+#total biomass
+Science_informed_B = rbind(Biom_fline, Biom_GSA_prop, Biom_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Mazor scenario 8", "Mazor scenario 9", "Micheli")) %>%
+  mutate(rel_biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_biomass_change),
+            sd = sd(rel_biomass_change))
+
+Science_informed_S5_S6_B = rbind(Biom_fline, Biom_GSA_prop, Biom_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Mazor scenario 8", "Mazor scenario 9")) %>%
+  mutate(rel_biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_biomass_change),
+            sd = sd(rel_biomass_change))
+
+Science_informed_S4_B = rbind(Biom_fline, Biom_GSA_prop, Biom_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Micheli")) %>%
+  mutate(rel_biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_biomass_change),
+            sd = sd(rel_biomass_change))
+
+Random_B = rbind(Biom_fline, Biom_GSA_prop, Biom_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(grepl("EEZ|Random", scenario)) %>%
+  mutate(scenario_group = case_when(
+    grepl("Random", scenario) ~ "Random",
+    TRUE ~ "EEZ-scale conservation"
+  )) %>%
+  mutate(rel_biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
+  group_by(scenario_group, Fishing_scenario) %>%
+  summarize(mean = mean(rel_biomass_change),
+            sd = sd(rel_biomass_change))
+
+Current_B = rbind(Biom_fline, Biom_GSA_prop, Biom_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Existing network")) %>%
+  mutate(rel_biomass_change = (tot.biomass - tot.biomass.ref)/tot.biomass.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_biomass_change),
+            sd = sd(rel_biomass_change))
+
+# total catch
+Science_informed_Y = rbind(Catch_fline, Catch_GSA_prop, Catch_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Mazor scenario 8", "Mazor scenario 9", "Micheli")) %>%
+  mutate(rel_catch_change = (tot.catches - tot.catches.ref)/tot.catches.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_catch_change),
+            sd = sd(rel_catch_change))
+
+Science_informed_Y_S5_S6 = rbind(Catch_fline, Catch_GSA_prop, Catch_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Mazor scenario 8", "Mazor scenario 9")) %>%
+  mutate(rel_catch_change = (tot.catches - tot.catches.ref)/tot.catches.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_catch_change),
+            sd = sd(rel_catch_change))
+
+Science_informed_Y_S4 = rbind(Catch_fline, Catch_GSA_prop, Catch_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Micheli")) %>%
+  mutate(rel_catch_change = (tot.catches - tot.catches.ref)/tot.catches.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_catch_change),
+            sd = sd(rel_catch_change))
+
+Random_Y = rbind(Catch_fline, Catch_GSA_prop, Catch_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(grepl("EEZ|Random", scenario)) %>%
+  mutate(scenario_group = case_when(
+    grepl("Random", scenario) ~ "Random",
+    TRUE ~ "EEZ-scale conservation"
+  )) %>%
+  mutate(rel_catch_change = (tot.catches - tot.catches.ref)/tot.catches.ref * 100) %>%
+  group_by(scenario_group, Fishing_scenario) %>%
+  summarize(mean = mean(rel_catch_change),
+            sd = sd(rel_catch_change))
+
+Current_Y = rbind(Catch_fline, Catch_GSA_prop, Catch_GSA_uniform) %>%
+  filter(mpa.coverage == 10) %>%
+  filter(scenario %in% c("Existing network")) %>%
+  mutate(rel_catch_change = (tot.catches - tot.catches.ref)/tot.catches.ref * 100) %>%
+  group_by(scenario, Fishing_scenario) %>%
+  summarize(mean = mean(rel_catch_change),
+            sd = sd(rel_catch_change))
+```
+
+
 Supplementary Figure S5.3 - variability among 30 replicates for total catch and biomass for FPA scenarios S1, S4-S6
 ```{r}
 plot.biomass.catch.change.Med.with.sd(Biom_GSA_prop, Biom_GSA_uniform, Biom_fline, Catch_GSA_prop, Catch_GSA_uniform, Catch_fline, save = TRUE)
