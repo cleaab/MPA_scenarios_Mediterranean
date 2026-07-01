@@ -166,6 +166,7 @@ mpa_colors <- c("Existing network" = "gold",
                 "Random 18" = "gray60",
                 "Random 19" = "gray60",
                 "Random 20" = "gray60",
+                "Random" = "gray60",
 
                 "EEZ-conservation 1" = "black", 
                 "EEZ-conservation 2" = "black", 
@@ -177,6 +178,7 @@ mpa_colors <- c("Existing network" = "gold",
                 "EEZ-conservation 8" = "black", 
                 "EEZ-conservation 9" = "black", 
                 "EEZ-conservation 10" = "black", 
+                "EEZ-scale conservation" = "black",
 
                 "Micheli" = "darkorange", 
                 "Mazor scenario 8" = "darkslateblue", 
@@ -265,6 +267,11 @@ Statistical.difference.scenarios(Catch_GSA_prop, Catch_GSA_uniform, Catch_fline,
 
 ```
 
+Supplementary Figure S5.3 - variability among 30 replicates for total catch and biomass for FPA scenarios S1, S4-S6
+```{r}
+plot.biomass.catch.change.Med.with.sd(Biom_GSA_prop, Biom_GSA_uniform, Biom_fline, Catch_GSA_prop, Catch_GSA_uniform, Catch_fline, save = TRUE)
+```
+
 # Figure 2 - changes in biomass and catch relative to before MPA establishment at 10% for each fishing redistribution strategy according to the distance to the MPA
 ```{r}
 
@@ -334,15 +341,15 @@ plot.fig3(biomass_by_groups, catch_by_groups, scen=1, f=2, save = TRUE) #  scen 
 
 # Current and literature (S1, S4-S6)
 for (scen in 1:4){
-  plot.fig.A6.other.scenarios.S1.S4.S5.S6(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
+  plot.fig.supplementary.S6.other.scenarios.S1.S4.S5.S6(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
 
 }
 
 # Random basin (average of 10) (S2)
-plot.fig.A6.other.scenarios.S2(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+plot.fig.supplementary.S6.other.scenarios.S2(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
 
 # Random EEZ (average of 10) (S3)
-plot.fig.A6.other.scenarios.S3(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+plot.fig.supplementary.S6.other.scenarios.S3(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
 
 
 ```
@@ -430,18 +437,24 @@ legend_labels <- c("S1-Current", "S2-Random basin", "S3-Random EEZ", "S4-Micheli
 
 # Current and literature (S1, S4-S6)
 for (scen in 1:4){
-  plot.fig.A6.other.scenarios.S1.S4.S5.S6.with.sd(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
+  plot.fig.supplementary.S6.other.scenarios.S1.S4.S5.S6.with.sd(biomass_by_groups_data, catch_by_groups_data, scen=scen, save = TRUE)
 
 }
 
 # Random basin (average of 10) (S2)
-plot.fig.A6.other.scenarios.S2.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+plot.fig.supplementary.S6.other.scenarios.S2.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
 
 # Random EEZ (average of 10) (S3)
-plot.fig.A6.other.scenarios.S3.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
+plot.fig.supplementary.S6.other.scenarios.S3.with.sd(biomass_by_groups_data, catch_by_groups_data, save = TRUE)
 
 ```
 
+Fig 3B (small pelagic biomass change) with variability for scenarios S1 and S4-S6 (Supplementary figure S6. 7)
+```{r}
+
+plot.small.pelagics.biomass.change.inside.FPAs.with.sd(biomass_by_groups, f = 2)
+
+```
 
 # Figure 4 - Large Fish Indicator (4A) and taxonomic alpha-diversity (4B) inside and outside MPAs
 # PROPOSAL - change to relative changes in total Med (same comparable baseline) + add Figure 5 - specifically to show how much diversity is encompassed by the networks (with evenness as well)
@@ -958,7 +971,7 @@ plot.fig.S6.2(save = TRUE)
 
 # Figure Suppmat S8.1 - alpha-taxonomic divesity inside FPAs before and after their establishment
 ```{r}
-fig.suppmat.8.1.before.after.diversity(save = TRUE)
+plot.S8.1.diversity.before.after.FPAs(save = TRUE)
 ```
 
 # Figure S8.2 - alpha-taxonomic divesity, evenness and species richness before FPA establishment
